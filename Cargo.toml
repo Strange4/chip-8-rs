@@ -1,0 +1,25 @@
+[package]
+name = "chip-8"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2.99"
+web-sys = { version = "0.3.76", features = [
+    "Window",
+    "Document",
+    "Element",
+    "Performance",
+    "EventTarget",
+    "HtmlBodyElement",
+] }
+log = "0.4"
+console_log = "0.2"
+web-time = "1.1.0"
+console_error_panic_hook = "0.1.7"
+
+[package.metadata.wasm-pack.profile.dev.wasm-bindgen]
+dwarf-debug-info = true
