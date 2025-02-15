@@ -19,9 +19,6 @@ pub fn render_emulator(
 
     // let ctx = canvas
 
-    let start = Instant::now();
-
-    draw_lines(&ctx, width, height, pixel_width, pixel_height);
     draw_pixels(
         &ctx,
         width,
@@ -30,8 +27,6 @@ pub fn render_emulator(
         pixel_width,
         pixel_height,
     );
-
-    info!("Took {:?} to render", start.elapsed());
 }
 
 fn draw_pixels(
@@ -61,8 +56,6 @@ fn draw_pixels(
             );
         }
     }
-
-    ctx.stroke();
 }
 
 fn draw_lines(

@@ -14,6 +14,7 @@ const MIN_REPAINT_TIME: Duration = Duration::from_millis(16);
 pub struct App {
     last_update: Instant,
     last_paint: Instant,
+    last_info: Instant,
     tick_number: i32,
     emulator: Program,
     updates_per_second: f64,
@@ -28,9 +29,10 @@ impl App {
         Self {
             last_update: Instant::now(),
             last_paint: Instant::now(),
+            last_info: Instant::now(),
             tick_number: 0,
             emulator: emul,
-            updates_per_second: 1.0,
+            updates_per_second: 1_000_000.0,
             context: get_context(),
             canvas: canvas(),
         }
@@ -61,14 +63,14 @@ impl App {
             if app.last_paint.elapsed() > MIN_REPAINT_TIME {
                 app.render();
                 app.last_paint = Instant::now();
-                info!("Just painted");
             }
 
-            if app.tick_number % 10 == 0 {
+            if app.last_info.elapsed() > Duration::from_secs(1) {
                 info!(
                     "Update number: {}, time passed: {:?}",
-                    app.tick_number, app.last_update
+                    app.tick_number, app.last_info
                 );
+                app.last_info = Instant::now();
             }
 
             // loop and reloop
@@ -89,12 +91,7 @@ impl App {
         let height = self.canvas.height();
         let ctx = self.context.clone();
 
-        request_animation_frame(
-            Closure::once_into_js(move || {
-                ui::render_emulator(display, ctx, width, height);
-            })
-            .unchecked_ref(),
-        );
+        ui::render_emulator(display, ctx, width, height);
     }
 }
 
