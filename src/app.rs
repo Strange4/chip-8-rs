@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use log::info;
 use wasm_bindgen::{prelude::Closure, JsCast};
-use web_sys::{js_sys::Function, CanvasRenderingContext2d, HtmlCanvasElement};
+use web_sys::{js_sys::Function, CanvasRenderingContext2d, HtmlCanvasElement, Window};
 use web_time::{Duration, Instant};
 
 use crate::{emulator::Program, ui};
@@ -20,6 +20,7 @@ pub struct App {
     updates_per_second: f64,
     context: CanvasRenderingContext2d,
     canvas: HtmlCanvasElement,
+    window: Window,
 }
 
 impl App {
@@ -35,6 +36,7 @@ impl App {
             updates_per_second: 1_000_000.0,
             context: get_context(),
             canvas: canvas(),
+            window: window(),
         }
     }
 
@@ -42,6 +44,7 @@ impl App {
         let function = Rc::new(RefCell::new(None));
         let starter: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = function.clone();
         let mut app = App::new();
+        app.set_event_handlers();
 
         *starter.borrow_mut() = Some(Closure::new(move || {
             let time_since_last_update = app.last_update.elapsed();
@@ -84,14 +87,29 @@ impl App {
         })
     }
 
-    fn render(&self) {
+    fn render(&mut self) {
         let display = self.emulator.get_display();
 
         let width = self.canvas.width();
         let height = self.canvas.height();
-        let ctx = self.context.clone();
 
-        ui::render_emulator(display, ctx, width, height);
+        ui::render_emulator(display, &self.context, width, height);
+    }
+
+    fn set_event_handlers(&mut self) {
+        // fix once and then set the resize event
+        ui::fix_dpi(&self.window, &mut self.canvas);
+
+        let window = self.window.clone();
+        let closure: Closure<dyn Fn(web_sys::Event)> = Closure::new(move |_: web_sys::Event| {
+            info!("Resizing");
+            let mut canvas = canvas();
+            ui::fix_dpi(&window, &mut canvas);
+        });
+        self.window
+            .add_event_listener_with_event_listener("resize", closure.as_ref().unchecked_ref())
+            .expect("Could not add even listener");
+        closure.forget();
     }
 }
 
@@ -117,12 +135,6 @@ fn set_timeout(f: &Closure<dyn FnMut()>) {
     window()
         .set_timeout_with_callback(f.as_ref().unchecked_ref())
         .expect("Couldn't register 'request_animation_frame'");
-}
-
-fn request_animation_frame(f: &Function) {
-    window()
-        .request_animation_frame(f)
-        .expect("Could not set request animation frame");
 }
 
 fn window() -> web_sys::Window {

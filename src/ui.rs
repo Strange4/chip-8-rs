@@ -1,12 +1,10 @@
 use crate::emulator::Program;
 use log::info;
-use wasm_bindgen::prelude::JsCast;
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
-use web_time::Instant;
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, Window};
 
 pub fn render_emulator(
     display: Vec<u8>,
-    ctx: CanvasRenderingContext2d,
+    ctx: &CanvasRenderingContext2d,
     canvas_width: u32,
     canvas_height: u32,
 ) {
@@ -16,8 +14,6 @@ pub fn render_emulator(
     // let canvas_height = canvas.height();
     let pixel_width = canvas_width / width;
     let pixel_height = canvas_height / height;
-
-    // let ctx = canvas
 
     draw_pixels(
         &ctx,
@@ -58,24 +54,31 @@ fn draw_pixels(
     }
 }
 
-fn draw_lines(
-    ctx: &CanvasRenderingContext2d,
-    width: u32,
-    height: u32,
-    pixel_width: u32,
-    pixel_height: u32,
-) {
-    let canvas_x_end = width * pixel_width;
-    let canvas_y_end = height * pixel_height;
-    ctx.set_stroke_style_str("#ffffff");
-    for y in 0..height {
-        ctx.move_to(0 as f64, (y * pixel_height) as f64);
-        ctx.line_to(canvas_x_end as f64, (y * pixel_height) as f64);
-    }
-    for x in 0..width {
-        ctx.move_to((x * pixel_width) as f64, 0 as f64);
-        ctx.line_to((x * pixel_width) as f64, canvas_y_end as f64);
-    }
+pub fn fix_dpi(window: &Window, canvas: &mut HtmlCanvasElement) {
+    let dpi = window.device_pixel_ratio();
+    let computed = window
+        .get_computed_style(&canvas)
+        .expect("could not get the computed style")
+        .expect("There was no computed style");
 
-    ctx.stroke();
+    let height = computed
+        .get_property_value("height")
+        .expect("Could not get the height")
+        .strip_suffix("px")
+        .unwrap()
+        .parse::<f64>()
+        .unwrap();
+    let width = computed
+        .get_property_value("width")
+        .expect("Could not get the width")
+        .strip_suffix("px")
+        .unwrap()
+        .parse::<f64>()
+        .unwrap();
+    canvas
+        .set_attribute("height", format!("{}px", (height as f64) * dpi).as_str())
+        .expect("Damm that's crazyy");
+    canvas
+        .set_attribute("width", format!("{}px", (width as f64) * dpi).as_str())
+        .expect("That's even crazier");
 }

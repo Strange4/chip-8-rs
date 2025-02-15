@@ -17,6 +17,9 @@ web-sys = { version = "0.3.76", features = [
     "HtmlBodyElement",
     "HtmlCanvasElement",
     "CanvasRenderingContext2d",
+    "CssStyleDeclaration",
+    "EventListener",
+    "Event",
 ] }
 log = "0.4"
 console_log = "0.2"
