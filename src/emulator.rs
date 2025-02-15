@@ -92,31 +92,27 @@ impl Program {
 
                 let rows = instr_second_byte & 0x0F;
                 self.variable_regsiters[0xF as usize] = 0;
-
-                // let sprite_data = &self.memory
-                //     [self.index_register as usize..(self.index_register + rows as u16) as usize];
                 for y in 0..rows {
                     let y_location = y_start + y;
                     if y_location >= DISPLAY_HEIGHT {
                         break;
                     }
 
-                    let row = self.memory[(self.index_register + y as u16) as usize];
+                    let sprite_row = self.memory[(self.index_register + y as u16) as usize];
 
-                    for x in (0 as u8..8).rev() {
+                    for x in 0 as u8..8 {
                         let x_location = x_start + x;
                         if x_location >= DISPLAY_WIDTH {
                             break;
                         }
-                        if (row >> x) == 1 {
+                        if ((sprite_row >> (7 - x)) & 0b1) == 1 {
                             let pixel_location =
                                 Self::pixel_location(x_location, y_location) as usize;
                             if self.display[pixel_location] == 1 {
-                                self.display[pixel_location] = 0;
                                 self.variable_regsiters[0xF as usize] = 1;
-                            } else {
-                                self.display[pixel_location] = 1;
                             }
+                            // if it's on turn it off; if it's off turn it on
+                            self.display[pixel_location] ^= 1;
                         }
                     }
                 }
