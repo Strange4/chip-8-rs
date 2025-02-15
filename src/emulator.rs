@@ -18,7 +18,6 @@ pub struct Program {
 }
 
 const START_ADDRESS: u16 = 0x200;
-// #[wasm_bindgen]
 impl Program {
     pub fn new() -> Self {
         let p = Self {
@@ -35,15 +34,14 @@ impl Program {
     }
 
     pub fn load_rom(&mut self, rom: &[u8]) {
-        self.memory[START_ADDRESS as usize..].copy_from_slice(rom);
+        for i in 0..rom.len() {
+            self.memory[i + START_ADDRESS as usize] = rom[i];
+        }
     }
 
-    pub fn timer_tick(&mut self, since_last_tick: Duration) {
-        let seconds_between_60_hertz = Duration::from_secs_f32(1.0 / 60.0);
-        if since_last_tick > seconds_between_60_hertz {
-            self.delay_timer -= 1;
-            self.sound_timer -= 1;
-        }
+    pub fn timer_tick(&mut self) {
+        self.delay_timer = self.delay_timer.wrapping_sub(1);
+        self.sound_timer = self.sound_timer.wrapping_sub(1);
     }
 
     pub fn tick(&mut self) {
@@ -65,7 +63,7 @@ impl Program {
             // jump
             0x10 => {
                 let jump_location =
-                    ((instr_first_byte & 0x0F) as u16) << 8 + instr_second_byte as u16;
+                    (((instr_first_byte & 0x0F) as u16) << 8) + instr_second_byte as u16;
                 self.program_counter = jump_location;
             }
             // set register
@@ -80,7 +78,7 @@ impl Program {
             }
             // set the I register for drawing fonts
             0xA0 => {
-                let location = ((instr_first_byte & 0x0F) as u16) << 8 + instr_second_byte as u16;
+                let location = (((instr_first_byte & 0x0F) as u16) << 8) + instr_second_byte as u16;
                 self.index_register = location;
             }
             // display
@@ -95,15 +93,15 @@ impl Program {
                 let rows = instr_second_byte & 0x0F;
                 self.variable_regsiters[0xF as usize] = 0;
 
-                let sprite_data =
-                    &self.memory[self.index_register as usize..(self.index_register + 5) as usize];
+                // let sprite_data = &self.memory
+                //     [self.index_register as usize..(self.index_register + rows as u16) as usize];
                 for y in 0..rows {
                     let y_location = y_start + y;
                     if y_location >= DISPLAY_HEIGHT {
                         break;
                     }
 
-                    let row = sprite_data[y as usize];
+                    let row = self.memory[(self.index_register + y as u16) as usize];
 
                     for x in (0 as u8..8).rev() {
                         let x_location = x_start + x;
@@ -117,7 +115,7 @@ impl Program {
                                 self.display[pixel_location] = 0;
                                 self.variable_regsiters[0xF as usize] = 1;
                             } else {
-                                self.display[pixel_location] = 0;
+                                self.display[pixel_location] = 1;
                             }
                         }
                     }
@@ -128,7 +126,7 @@ impl Program {
     }
 
     pub fn get_display(&self) -> Vec<u8> {
-        self.display.to_vec()
+        self.display.into()
     }
 
     pub fn width() -> u8 {
@@ -139,7 +137,7 @@ impl Program {
     }
 
     #[inline]
-    fn pixel_location(x: u8, y: u8) -> usize {
+    pub fn pixel_location(x: u8, y: u8) -> usize {
         (y as usize * DISPLAY_WIDTH as usize) + x as usize
     }
 

@@ -1,8 +1,10 @@
 mod app;
 mod emulator;
 mod handlers;
-use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
+mod ui;
+
 use std::panic;
+use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
 extern crate console_error_panic_hook;
 
 #[wasm_bindgen]
