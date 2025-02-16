@@ -21,7 +21,7 @@ pub struct Runner {
     // emulator: Program,
     updates_per_second: f64,
     context: CanvasRenderingContext2d,
-    canvas: HtmlCanvasElement,
+    // canvas: HtmlCanvasElement,
     // window: Window,
 }
 
@@ -37,7 +37,7 @@ impl Runner {
             // emulator: emul,
             updates_per_second: 1_000_000.0,
             context: get_context(),
-            canvas: canvas(),
+            // canvas: canvas(),
             // window: window(),
         }
     }
@@ -67,13 +67,7 @@ impl Runner {
 
             if app.last_paint.elapsed() > MIN_REPAINT_TIME {
                 emulator.timer_tick();
-                Runner::render(
-                    &emulator,
-                    &app.context,
-                    app.canvas.width(),
-                    app.canvas.height(),
-                );
-                drop(emulator);
+                Runner::render(&emulator, &app.context);
                 app.last_paint = Instant::now();
             }
 
@@ -96,15 +90,9 @@ impl Runner {
         })
     }
 
-    fn render(
-        emulator: &Program,
-        ctx: &CanvasRenderingContext2d,
-        canvas_width: u32,
-        canvas_height: u32,
-    ) {
+    fn render(emulator: &Program, ctx: &CanvasRenderingContext2d) {
         let display = emulator.get_display();
-
-        ui::render_emulator(display, ctx, canvas_width, canvas_height);
+        ui::render_emulator(display, ctx);
     }
 }
 
