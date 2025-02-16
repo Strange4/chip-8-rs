@@ -11,7 +11,13 @@
 
 <body>
     <canvas width="64" height="32"></canvas>
-    <button id="start_button">Start</button>
+    <div id="controls">
+        <button id="start_button">Start</button>
+
+        <!-- So we can have a nice button -->
+        <button onclick="document.querySelector('#load_rom').click()">Load Rom</button>
+        <input style="display: none;" id="load_rom" name="load_rom" type="file" accept=".ch8">
+    </div>
 </body>
 
 </html>

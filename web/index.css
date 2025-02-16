@@ -1,17 +1,65 @@
 html {
     background-color: #242424;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 html,
 body {
-    height: 100%;
+    width: 100%;
     margin: 0;
 }
 
 canvas {
-    height: 100%;
+    width: 100%;
     image-rendering: pixelated;
     aspect-ratio: 2;
     margin: 0;
     padding: 0;
+}
+
+button {
+    min-width: 130px;
+    height: 40px;
+    color: #fff;
+    padding: 5px 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    display: inline-block;
+    outline: none;
+    overflow: hidden;
+    border-radius: 5px;
+    border: none;
+    background-color: #343a40
+}
+
+button:hover {
+    border-radius: 5px;
+    padding-right: 24px;
+    padding-left: 8px;
+}
+
+button:hover:after {
+    opacity: 1;
+    right: 10px;
+}
+
+button:after {
+    content: "\00BB";
+    position: absolute;
+    opacity: 0;
+    font-size: 20px;
+    line-height: 40px;
+    top: 0;
+    right: -20px;
+    transition: 0.4s;
+}
+
+#controls {
+    margin: 1rem;
+}
+
+#controls input {
+    opacity: 0;
 }

@@ -18,35 +18,26 @@ pub struct Runner {
     last_paint: Instant,
     last_info: Instant,
     tick_number: i32,
-    // emulator: Program,
     updates_per_second: f64,
     context: CanvasRenderingContext2d,
-    // canvas: HtmlCanvasElement,
-    // window: Window,
 }
 
 impl Runner {
     pub fn new() -> Self {
-        // let mut emul = Program::new();
-        // emul.load_rom(ROM);
         Self {
             last_update: Instant::now(),
             last_paint: Instant::now(),
             last_info: Instant::now(),
             tick_number: 0,
-            // emulator: emul,
             updates_per_second: 1_000_000.0,
             context: get_context(),
-            // canvas: canvas(),
-            // window: window(),
         }
     }
 
     pub fn start_loop() -> Box<dyn FnOnce()> {
         let function = Rc::new(RefCell::new(None));
-        let starter: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = function.clone();
+        let starter = function.clone();
         let mut app = Runner::new();
-        // app.set_event_handlers();
 
         *starter.borrow_mut() = Some(Closure::new(move || {
             let mut emulator = get_program().lock().unwrap();
@@ -115,10 +106,17 @@ fn get_context() -> CanvasRenderingContext2d {
 }
 
 fn set_timeout(f: &Closure<dyn FnMut()>) {
-    let handle = window()
+    let window = window();
+    let mut old_handle = INTERVAL_HANDLE.lock().unwrap();
+
+    if old_handle.is_some() {
+        window.clear_interval_with_handle(old_handle.unwrap());
+    }
+
+    let new_handle = window
         .set_timeout_with_callback(f.as_ref().unchecked_ref())
         .expect("Couldn't register 'request_animation_frame'");
-    INTERVAL_HANDLE.lock().unwrap().replace(handle);
+    old_handle.replace(new_handle);
 }
 
 pub fn window() -> web_sys::Window {
@@ -129,10 +127,4 @@ pub fn document() -> web_sys::Document {
     window()
         .document()
         .expect("there was no document for this window")
-}
-
-fn body() -> web_sys::HtmlElement {
-    document()
-        .body()
-        .expect("This document doesn't have a body")
 }

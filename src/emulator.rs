@@ -1,15 +1,8 @@
-use std::{
-    rc::Rc,
-    sync::{Arc, Mutex, OnceLock, PoisonError},
-    time::{Duration, Instant},
-};
-
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use std::sync::{Mutex, OnceLock};
 
 const DISPLAY_WIDTH: u8 = 64;
 const DISPLAY_HEIGHT: u8 = 32;
 const RGBA: u8 = 4;
-pub const ROM: &'static [u8; 132] = include_bytes!("../roms/IBM Logo.ch8");
 
 pub fn get_program() -> &'static Mutex<Program> {
     // this is some rust crazyness
@@ -31,6 +24,8 @@ pub struct Program {
 }
 
 const START_ADDRESS: u16 = 0x200;
+const ON_COLOR: [u8; 4] = Program::hex_to_rgba(0xffffffff);
+const OFF_COLOR: [u8; 4] = Program::hex_to_rgba(0x0);
 
 type OpCodeFn = fn(program: &mut Program, instruction: u16);
 
@@ -48,16 +43,25 @@ impl Program {
             variable_regsiters: [0; 16],
             function_table: [NULL_OP; 0xF + 1],
         };
-
-        // DON'T FORGET TO INITIALIZE
         p.set_font();
         p.set_instruction_table();
         p
     }
 
+    pub fn reset(&mut self) {
+        self.display.fill(0);
+        self.program_counter = START_ADDRESS;
+        self.index_register = 0;
+        self.call_stack.clear();
+        self.delay_timer = 0xFF;
+        self.sound_timer = 0xFF;
+        self.variable_regsiters = [0; 16];
+    }
+
     pub fn load_rom(&mut self, rom: &[u8]) {
-        for i in 0..rom.len() {
-            self.memory[i + START_ADDRESS as usize] = rom[i];
+        self.reset();
+        for (i, value) in rom.iter().enumerate() {
+            self.memory[i + START_ADDRESS as usize] = *value;
         }
     }
 
@@ -113,13 +117,41 @@ impl Program {
             0xF, 0x8, 0xF, 0x8, 0x8, // F
         ];
         const FONT_START: usize = 0x050;
-        for i in 0..CHARACTER_FONTS.len() {
-            self.memory[i + FONT_START] = CHARACTER_FONTS[i];
+        for (i, value) in CHARACTER_FONTS.iter().enumerate() {
+            self.memory[i + FONT_START] = *value;
         }
     }
 
-    // fn invert_pixel(&mut self, x: u8, y: u8) {
-    // }
+    const fn hex_to_rgba(hex: u32) -> [u8; 4] {
+        [
+            ((hex & 0xFF000000) >> 24) as u8,
+            ((hex & 0x00FF0000) >> 16) as u8,
+            ((hex & 0x0000FF00) >> 8) as u8,
+            (hex & 0x000000FF) as u8,
+        ]
+    }
+
+    fn pixel_is_on(&mut self, location: usize) -> bool {
+        if ON_COLOR[0] == self.display[location] {
+            return true;
+        }
+        if OFF_COLOR[0] == self.display[location] {
+            return false;
+        }
+        panic!("Couldn't determine if pixel was on or off");
+    }
+
+    fn invert_pixel(&mut self, location: usize) {
+        let color = if Self::pixel_is_on(self, location) {
+            OFF_COLOR
+        } else {
+            ON_COLOR
+        };
+        self.display[location] = color[0];
+        self.display[location + 1] = color[1];
+        self.display[location + 2] = color[2];
+        self.display[location + 3] = color[3];
+    }
 
     pub fn set_instruction_table(&mut self) {
         self.function_table[0x0] = Program::op_0;
@@ -170,12 +202,16 @@ impl Program {
     }
     fn op_8(program: &mut Program, instruction: u16) {}
     fn op_9(program: &mut Program, instruction: u16) {}
+    #[allow(non_snake_case)]
     fn op_A(program: &mut Program, instruction: u16) {
         let location = instruction & 0x0FFF;
         program.index_register = location;
     }
+    #[allow(non_snake_case)]
     fn op_B(program: &mut Program, instruction: u16) {}
+    #[allow(non_snake_case)]
     fn op_C(program: &mut Program, instruction: u16) {}
+    #[allow(non_snake_case)]
     fn op_D(program: &mut Program, instruction: u16) {
         let x_register = (instruction & 0x0F00) >> 8;
         let y_register = (instruction & 0x00F0) >> 4;
@@ -185,7 +221,7 @@ impl Program {
         let y_start = program.variable_regsiters[y_register as usize] % DISPLAY_HEIGHT;
         let rows = (instruction & 0x000F) as u8;
 
-        program.variable_regsiters[0xF as usize] = 0;
+        program.variable_regsiters[0xF_usize] = 0;
         for y in 0..rows {
             let y_location = y_start + y;
             if y_location >= DISPLAY_HEIGHT {
@@ -194,27 +230,23 @@ impl Program {
 
             let sprite_row = program.memory[(program.index_register + y as u16) as usize];
 
-            for x in 0 as u8..8 {
+            for x in 0_u8..8 {
                 let x_location = x_start + x;
                 if x_location >= DISPLAY_WIDTH {
                     break;
                 }
                 if ((sprite_row >> (7 - x)) & 0b1) == 1 {
-                    // program.invert_pixel(x_location, y_location);
-                    let pixel_location = Program::pixel_location(x_location, y_location) as usize;
-                    if program.display[pixel_location] == u8::MAX {
-                        program.display[pixel_location] = 0;
-                        program.variable_regsiters[0xF as usize] = 1;
-                    } else {
-                        program.display[pixel_location] = u8::MAX;
-                        program.display[pixel_location + 3] = 255; // setting the alpha to 1
+                    let pixel_location = Program::pixel_location(x_location, y_location);
+                    if program.pixel_is_on(pixel_location) {
+                        program.variable_regsiters[0xF_usize] = 1;
                     }
-                    // if it's on turn it off; if it's off turn it on
-                    // program.display[pixel_location] ^= 1;
+                    program.invert_pixel(pixel_location);
                 }
             }
         }
     }
+    #[allow(non_snake_case)]
     fn op_E(program: &mut Program, instruction: u16) {}
+    #[allow(non_snake_case)]
     fn op_F(program: &mut Program, instruction: u16) {}
 }
