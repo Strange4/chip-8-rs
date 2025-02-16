@@ -10,8 +10,9 @@ extern crate console_error_panic_hook;
 #[wasm_bindgen]
 pub fn start() -> Result<(), JsValue> {
     init_console();
-    let starter = app::App::start_loop();
-    starter();
+    ui::set_handlers();
+    // let starter = app::Runner::start_loop();
+    // starter();
     Ok(())
 }
 

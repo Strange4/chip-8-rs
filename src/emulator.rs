@@ -1,11 +1,22 @@
-use std::time::{Duration, Instant};
+use std::{
+    rc::Rc,
+    sync::{Arc, Mutex, OnceLock},
+    time::{Duration, Instant},
+};
 
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 const DISPLAY_WIDTH: u8 = 64;
 const DISPLAY_HEIGHT: u8 = 32;
+pub const ROM: &'static [u8; 132] = include_bytes!("../roms/IBM Logo.ch8");
 
-// #[wasm_bindgen]
+pub fn get_program() -> &'static Mutex<Program> {
+    // this is some rust crazyness
+    // This can only be written once so it's static
+    static PROGRAM: OnceLock<Mutex<Program>> = OnceLock::new();
+    PROGRAM.get_or_init(|| Mutex::new(Program::new()))
+}
+
 pub struct Program {
     memory: [u8; 4096],
     display: [u8; DISPLAY_WIDTH as usize * DISPLAY_HEIGHT as usize],
@@ -23,7 +34,7 @@ const START_ADDRESS: u16 = 0x200;
 type OpCodeFn = fn(program: &mut Program, instruction: u16);
 
 impl Program {
-    pub fn new() -> Self {
+    fn new() -> Self {
         const NULL_OP: OpCodeFn = |_, __| {};
         let mut p = Self {
             memory: [0; 4096],
@@ -36,6 +47,8 @@ impl Program {
             variable_regsiters: [0; 16],
             function_table: [NULL_OP; 0xF + 1],
         };
+
+        // DON'T FORGET TO INITIALIZE
         p.set_font();
         p.set_instruction_table();
         p

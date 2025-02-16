@@ -1,6 +1,12 @@
-use crate::emulator::Program;
+use crate::{
+    app::{self, Runner},
+    emulator::{self, Program},
+};
 use log::info;
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, Window};
+use wasm_bindgen::{prelude::Closure, JsCast};
+use web_sys::{
+    CanvasRenderingContext2d, Document, Event, HtmlButtonElement, HtmlCanvasElement, Window,
+};
 
 pub fn render_emulator(
     display: Vec<u8>,
@@ -10,8 +16,6 @@ pub fn render_emulator(
 ) {
     let width = Program::width() as u32;
     let height = Program::height() as u32;
-    // let canvas_width = canvas.width();
-    // let canvas_height = canvas.height();
     let pixel_width = canvas_width / width;
     let pixel_height = canvas_height / height;
 
@@ -54,7 +58,7 @@ fn draw_pixels(
     }
 }
 
-pub fn fix_dpi(window: &Window, canvas: &mut HtmlCanvasElement) {
+fn fix_dpi(window: &Window, canvas: &mut HtmlCanvasElement) {
     let dpi = window.device_pixel_ratio();
     let computed = window
         .get_computed_style(&canvas)
@@ -81,4 +85,53 @@ pub fn fix_dpi(window: &Window, canvas: &mut HtmlCanvasElement) {
     canvas
         .set_attribute("width", format!("{}px", (width as f64) * dpi).as_str())
         .expect("That's even crazier");
+}
+
+pub fn set_handlers() {
+    start_button_handler(&app::document());
+    resize_handler(&app::window());
+}
+
+fn resize_handler(window: &Window) {
+    // fix once and then set the resize event
+    fix_dpi(window, &mut app::canvas());
+    let window2 = window.clone();
+
+    let closure: Closure<dyn Fn(web_sys::Event)> = Closure::new(move |_: web_sys::Event| {
+        info!("Resizing");
+        fix_dpi(&window2, &mut app::canvas());
+    });
+    window
+        .add_event_listener_with_event_listener("resize", closure.as_ref().unchecked_ref())
+        .expect("Could not add even listener");
+    closure.forget();
+}
+
+fn start_button(document: &Document) -> HtmlButtonElement {
+    document
+        .query_selector("#start_button")
+        .expect("The query was wrong")
+        .expect("There was no button")
+        .dyn_into()
+        .expect("Could not dyn into a button")
+}
+
+fn start_button_handler(document: &Document) {
+    let button = start_button(document);
+    add_event_listener(&button, "click", |_| {
+        emulator::get_program()
+            .lock()
+            .unwrap()
+            .load_rom(emulator::ROM);
+        let starter = Runner::start_loop();
+        starter();
+    });
+}
+
+fn add_event_listener(target: &web_sys::EventTarget, event_name: &str, func: fn(e: Event)) {
+    let closure: Closure<dyn Fn(Event)> = Closure::new(func);
+    target
+        .add_event_listener_with_event_listener(event_name, closure.as_ref().unchecked_ref())
+        .expect("Could not add event listener");
+    closure.forget();
 }

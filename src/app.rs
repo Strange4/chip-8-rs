@@ -1,52 +1,55 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, sync::Mutex};
 
 use log::info;
 use wasm_bindgen::{prelude::Closure, JsCast};
-use web_sys::{js_sys::Function, CanvasRenderingContext2d, HtmlCanvasElement, Window};
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use web_time::{Duration, Instant};
 
-use crate::{emulator::Program, ui};
-
-const ROM: &'static [u8; 132] = include_bytes!("../roms/IBM Logo.ch8");
+use crate::{
+    emulator::{get_program, Program},
+    ui,
+};
 
 const MIN_REPAINT_TIME: Duration = Duration::from_millis(16);
+static INTERVAL_HANDLE: Mutex<Option<i32>> = Mutex::new(None);
 
-pub struct App {
+pub struct Runner {
     last_update: Instant,
     last_paint: Instant,
     last_info: Instant,
     tick_number: i32,
-    emulator: Program,
+    // emulator: Program,
     updates_per_second: f64,
     context: CanvasRenderingContext2d,
     canvas: HtmlCanvasElement,
-    window: Window,
+    // window: Window,
 }
 
-impl App {
-    fn new() -> Self {
-        let mut emul = Program::new();
-        emul.load_rom(ROM);
+impl Runner {
+    pub fn new() -> Self {
+        // let mut emul = Program::new();
+        // emul.load_rom(ROM);
         Self {
             last_update: Instant::now(),
             last_paint: Instant::now(),
             last_info: Instant::now(),
             tick_number: 0,
-            emulator: emul,
+            // emulator: emul,
             updates_per_second: 1_000_000.0,
             context: get_context(),
             canvas: canvas(),
-            window: window(),
+            // window: window(),
         }
     }
 
     pub fn start_loop() -> Box<dyn FnOnce()> {
         let function = Rc::new(RefCell::new(None));
         let starter: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = function.clone();
-        let mut app = App::new();
-        app.set_event_handlers();
+        let mut app = Runner::new();
+        // app.set_event_handlers();
 
         *starter.borrow_mut() = Some(Closure::new(move || {
+            let mut emulator = get_program().lock().unwrap();
             let time_since_last_update = app.last_update.elapsed();
             let how_many_updates =
                 (time_since_last_update.as_secs_f64() * app.updates_per_second).ceil() as usize;
@@ -55,16 +58,22 @@ impl App {
             // been done since the last time it was updates
             for _ in 0..how_many_updates {
                 app.tick_number += 1;
-                app.emulator.tick();
+                emulator.tick();
             }
 
             if how_many_updates != 0 {
                 app.last_update = Instant::now();
-                app.emulator.timer_tick();
             }
 
             if app.last_paint.elapsed() > MIN_REPAINT_TIME {
-                app.render();
+                emulator.timer_tick();
+                Runner::render(
+                    &emulator,
+                    &app.context,
+                    app.canvas.width(),
+                    app.canvas.height(),
+                );
+                drop(emulator);
                 app.last_paint = Instant::now();
             }
 
@@ -87,33 +96,19 @@ impl App {
         })
     }
 
-    fn render(&mut self) {
-        let display = self.emulator.get_display();
+    fn render(
+        emulator: &Program,
+        ctx: &CanvasRenderingContext2d,
+        canvas_width: u32,
+        canvas_height: u32,
+    ) {
+        let display = emulator.get_display();
 
-        let width = self.canvas.width();
-        let height = self.canvas.height();
-
-        ui::render_emulator(display, &self.context, width, height);
-    }
-
-    fn set_event_handlers(&mut self) {
-        // fix once and then set the resize event
-        ui::fix_dpi(&self.window, &mut self.canvas);
-
-        let window = self.window.clone();
-        let closure: Closure<dyn Fn(web_sys::Event)> = Closure::new(move |_: web_sys::Event| {
-            info!("Resizing");
-            let mut canvas = canvas();
-            ui::fix_dpi(&window, &mut canvas);
-        });
-        self.window
-            .add_event_listener_with_event_listener("resize", closure.as_ref().unchecked_ref())
-            .expect("Could not add even listener");
-        closure.forget();
+        ui::render_emulator(display, ctx, canvas_width, canvas_height);
     }
 }
 
-fn canvas() -> HtmlCanvasElement {
+pub fn canvas() -> HtmlCanvasElement {
     document()
         .query_selector("canvas")
         .expect("the selector is not valid")
@@ -132,16 +127,17 @@ fn get_context() -> CanvasRenderingContext2d {
 }
 
 fn set_timeout(f: &Closure<dyn FnMut()>) {
-    window()
+    let handle = window()
         .set_timeout_with_callback(f.as_ref().unchecked_ref())
         .expect("Couldn't register 'request_animation_frame'");
+    INTERVAL_HANDLE.lock().unwrap().replace(handle);
 }
 
-fn window() -> web_sys::Window {
+pub fn window() -> web_sys::Window {
     web_sys::window().expect("no global 'window' found")
 }
 
-fn document() -> web_sys::Document {
+pub fn document() -> web_sys::Document {
     window()
         .document()
         .expect("there was no document for this window")
