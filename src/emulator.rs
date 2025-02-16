@@ -1,6 +1,6 @@
 use std::{
     rc::Rc,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{Arc, Mutex, OnceLock, PoisonError},
     time::{Duration, Instant},
 };
 
@@ -8,6 +8,7 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 const DISPLAY_WIDTH: u8 = 64;
 const DISPLAY_HEIGHT: u8 = 32;
+const RGBA: u8 = 4;
 pub const ROM: &'static [u8; 132] = include_bytes!("../roms/IBM Logo.ch8");
 
 pub fn get_program() -> &'static Mutex<Program> {
@@ -19,7 +20,7 @@ pub fn get_program() -> &'static Mutex<Program> {
 
 pub struct Program {
     memory: [u8; 4096],
-    display: [u8; DISPLAY_WIDTH as usize * DISPLAY_HEIGHT as usize],
+    display: [u8; DISPLAY_WIDTH as usize * DISPLAY_HEIGHT as usize * RGBA as usize],
     program_counter: u16,
     index_register: u16,
     call_stack: Vec<u16>,
@@ -38,7 +39,7 @@ impl Program {
         const NULL_OP: OpCodeFn = |_, __| {};
         let mut p = Self {
             memory: [0; 4096],
-            display: [0; 2048],
+            display: [0; 8192],
             program_counter: START_ADDRESS,
             index_register: 0,
             call_stack: Vec::new(),
@@ -87,7 +88,7 @@ impl Program {
 
     #[inline]
     pub fn pixel_location(x: u8, y: u8) -> usize {
-        (y as usize * DISPLAY_WIDTH as usize) + x as usize
+        ((y * RGBA) as usize * DISPLAY_WIDTH as usize) + (x * RGBA) as usize
     }
 
     fn set_font(&mut self) {
@@ -116,6 +117,9 @@ impl Program {
             self.memory[i + FONT_START] = CHARACTER_FONTS[i];
         }
     }
+
+    // fn invert_pixel(&mut self, x: u8, y: u8) {
+    // }
 
     pub fn set_instruction_table(&mut self) {
         self.function_table[0x0] = Program::op_0;
@@ -196,12 +200,17 @@ impl Program {
                     break;
                 }
                 if ((sprite_row >> (7 - x)) & 0b1) == 1 {
+                    // program.invert_pixel(x_location, y_location);
                     let pixel_location = Program::pixel_location(x_location, y_location) as usize;
-                    if program.display[pixel_location] == 1 {
+                    if program.display[pixel_location] == u8::MAX {
+                        program.display[pixel_location] = 0;
                         program.variable_regsiters[0xF as usize] = 1;
+                    } else {
+                        program.display[pixel_location] = u8::MAX;
+                        program.display[pixel_location + 3] = 255; // setting the alpha to 1
                     }
                     // if it's on turn it off; if it's off turn it on
-                    program.display[pixel_location] ^= 1;
+                    // program.display[pixel_location] ^= 1;
                 }
             }
         }

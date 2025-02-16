@@ -4,16 +4,13 @@ mod handlers;
 mod ui;
 
 use std::panic;
-use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
+use wasm_bindgen::prelude::wasm_bindgen;
 extern crate console_error_panic_hook;
 
 #[wasm_bindgen]
-pub fn start() -> Result<(), JsValue> {
+pub fn start() {
     init_console();
     ui::set_handlers();
-    // let starter = app::Runner::start_loop();
-    // starter();
-    Ok(())
 }
 
 fn init_console() {
