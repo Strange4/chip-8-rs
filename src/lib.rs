@@ -1,7 +1,7 @@
 mod app;
 mod emulator;
+mod keys;
 mod ui;
-
 use std::panic;
 use wasm_bindgen::prelude::wasm_bindgen;
 extern crate console_error_panic_hook;
@@ -10,6 +10,7 @@ extern crate console_error_panic_hook;
 pub fn start() {
     init_console();
     ui::set_handlers();
+    keys::set_handlers();
 }
 
 fn init_console() {
