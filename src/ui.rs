@@ -8,20 +8,15 @@ use web_sys::{
     js_sys::Uint8Array, CanvasRenderingContext2d, Document, Event, HtmlButtonElement,
     HtmlInputElement, ImageData,
 };
-use web_time::Instant;
 
 pub fn render_emulator(display: Vec<u8>, ctx: &CanvasRenderingContext2d) {
     let width = Program::width() as u32;
-
-    let start = Instant::now();
 
     let data = ImageData::new_with_u8_clamped_array(Clamped(&display), width)
         .expect("Could not create the image data");
 
     ctx.put_image_data(&data, 0.0, 0.0)
         .expect("Could not put image data");
-
-    info!("Rendering took: {:?}", start.elapsed());
 }
 
 pub fn set_handlers() {

@@ -1,7 +1,11 @@
 use std::sync::{Mutex, OnceLock};
 
+use web_sys::js_sys::Math::random;
+
 const DISPLAY_WIDTH: u8 = 64;
 const DISPLAY_HEIGHT: u8 = 32;
+const ON_COLOR: [u8; 4] = Program::hex_to_rgba(0xffffffff);
+const OFF_COLOR: [u8; 4] = Program::hex_to_rgba(0x0);
 const RGBA: u8 = 4;
 
 pub fn get_program() -> &'static Mutex<Program> {
@@ -20,28 +24,30 @@ pub struct Program {
     delay_timer: u8,
     sound_timer: u8,
     variable_regsiters: [u8; 16],
-    function_table: [OpCodeFn; 0xF + 1],
+    op_table: [OpCodeFn; 0xF + 1],
+    f_op_table: [OpCodeFn; 0x65 + 1],
+    pressed_keys: u16, // each bit tells if the key is pressed
 }
-
-const START_ADDRESS: u16 = 0x200;
-const ON_COLOR: [u8; 4] = Program::hex_to_rgba(0xffffffff);
-const OFF_COLOR: [u8; 4] = Program::hex_to_rgba(0x0);
 
 type OpCodeFn = fn(program: &mut Program, instruction: u16);
 
 impl Program {
+    const START_ADDRESS: u16 = 0x200;
+    const FONT_START_ADDR: usize = 0x050;
     fn new() -> Self {
         const NULL_OP: OpCodeFn = |_, __| {};
         let mut p = Self {
             memory: [0; 4096],
             display: [0; 8192],
-            program_counter: START_ADDRESS,
+            program_counter: Self::START_ADDRESS,
             index_register: 0,
             call_stack: Vec::new(),
             delay_timer: 0xFF,
             sound_timer: 0xFF,
             variable_regsiters: [0; 16],
-            function_table: [NULL_OP; 0xF + 1],
+            op_table: [NULL_OP; 0xF + 1],
+            f_op_table: [NULL_OP; 0x65 + 1],
+            pressed_keys: 0,
         };
         p.set_font();
         p.set_instruction_table();
@@ -50,18 +56,19 @@ impl Program {
 
     pub fn reset(&mut self) {
         self.display.fill(0);
-        self.program_counter = START_ADDRESS;
+        self.program_counter = Self::START_ADDRESS;
         self.index_register = 0;
         self.call_stack.clear();
         self.delay_timer = 0xFF;
         self.sound_timer = 0xFF;
         self.variable_regsiters = [0; 16];
+        self.pressed_keys = 0;
     }
 
     pub fn load_rom(&mut self, rom: &[u8]) {
         self.reset();
         for (i, value) in rom.iter().enumerate() {
-            self.memory[i + START_ADDRESS as usize] = *value;
+            self.memory[i + Self::START_ADDRESS as usize] = *value;
         }
     }
 
@@ -76,7 +83,19 @@ impl Program {
         let entire_instruction = ((instr_first_byte as u16) << 8) | instr_second_byte as u16;
         let first_nible = instr_first_byte >> 4;
         self.program_counter += 2;
-        self.function_table[first_nible as usize](self, entire_instruction);
+        self.op_table[first_nible as usize](self, entire_instruction);
+    }
+
+    pub fn set_key_down(&mut self, key: u8) {
+        self.pressed_keys |= 0b1 << key;
+    }
+
+    pub fn set_key_up(&mut self, key: u8) {
+        self.pressed_keys &= 0 << key;
+    }
+
+    fn key_is_pressed(&self, key: u8) -> bool {
+        ((self.pressed_keys >> key) & 0b1) == 1
     }
 
     pub fn get_display(&self) -> Vec<u8> {
@@ -91,7 +110,7 @@ impl Program {
     }
 
     #[inline]
-    pub fn pixel_location(x: u8, y: u8) -> usize {
+    fn pixel_location(x: u8, y: u8) -> usize {
         ((y * RGBA) as usize * DISPLAY_WIDTH as usize) + (x * RGBA) as usize
     }
 
@@ -116,9 +135,8 @@ impl Program {
             0xF, 0x8, 0xF, 0x8, 0xF, // E
             0xF, 0x8, 0xF, 0x8, 0x8, // F
         ];
-        const FONT_START: usize = 0x050;
         for (i, value) in CHARACTER_FONTS.iter().enumerate() {
-            self.memory[i + FONT_START] = *value;
+            self.memory[i + Self::FONT_START_ADDR] = *value;
         }
     }
 
@@ -154,22 +172,32 @@ impl Program {
     }
 
     pub fn set_instruction_table(&mut self) {
-        self.function_table[0x0] = Program::op_0;
-        self.function_table[0x1] = Program::op_1;
-        self.function_table[0x2] = Program::op_2;
-        self.function_table[0x3] = Program::op_3;
-        self.function_table[0x4] = Program::op_4;
-        self.function_table[0x5] = Program::op_5;
-        self.function_table[0x6] = Program::op_6;
-        self.function_table[0x7] = Program::op_7;
-        self.function_table[0x8] = Program::op_8;
-        self.function_table[0x9] = Program::op_9;
-        self.function_table[0xA] = Program::op_A;
-        self.function_table[0xB] = Program::op_B;
-        self.function_table[0xC] = Program::op_C;
-        self.function_table[0xD] = Program::op_D;
-        self.function_table[0xE] = Program::op_E;
-        self.function_table[0xF] = Program::op_F;
+        self.op_table[0x0] = Program::op_0;
+        self.op_table[0x1] = Program::op_1;
+        self.op_table[0x2] = Program::op_2;
+        self.op_table[0x3] = Program::op_3;
+        self.op_table[0x4] = Program::op_4;
+        self.op_table[0x5] = Program::op_5;
+        self.op_table[0x6] = Program::op_6;
+        self.op_table[0x7] = Program::op_7;
+        self.op_table[0x8] = Program::op_8;
+        self.op_table[0x9] = Program::op_9;
+        self.op_table[0xA] = Program::op_A;
+        self.op_table[0xB] = Program::op_B;
+        self.op_table[0xC] = Program::op_C;
+        self.op_table[0xD] = Program::op_D;
+        self.op_table[0xE] = Program::op_E;
+        self.op_table[0xF] = Program::op_F;
+
+        self.f_op_table[0x7] = Program::op_FX07;
+        self.f_op_table[0xA] = Program::op_FX0A;
+        self.f_op_table[0x15] = Program::op_FX15;
+        self.f_op_table[0x18] = Program::op_FX18;
+        self.f_op_table[0x1E] = Program::op_FX1E;
+        self.f_op_table[0x29] = Program::op_FX29;
+        self.f_op_table[0x33] = Program::op_FX33;
+        self.f_op_table[0x55] = Program::op_FX55;
+        self.f_op_table[0x65] = Program::op_FX65;
     }
 
     // Instructions bellow
@@ -179,6 +207,11 @@ impl Program {
             0x00E0 => {
                 program.display.fill(0);
             },
+            // return from function
+            0x00EE => {
+                let pointer = program.call_stack.pop().expect("returned from a function without a return address");
+                program.program_counter = pointer;
+            },
             _ => panic!("Encountered an execute machine language routine instruction. This isn't implemented")
         }
     }
@@ -186,31 +219,122 @@ impl Program {
         let jump_location = instruction & 0x0FFF;
         program.program_counter = jump_location;
     }
-    fn op_2(program: &mut Program, instruction: u16) {}
-    fn op_3(program: &mut Program, instruction: u16) {}
-    fn op_4(program: &mut Program, instruction: u16) {}
-    fn op_5(program: &mut Program, instruction: u16) {}
-    fn op_6(program: &mut Program, instruction: u16) {
-        let register_name = (instruction & 0x0F00) >> 8;
+    fn op_2(program: &mut Program, instruction: u16) {
+        // call the function
+        let pointer = instruction & 0x0FFF;
+        program.call_stack.push(pointer);
+        program.program_counter = pointer;
+    }
+    fn op_3(program: &mut Program, instruction: u16) {
+        let register_name = ((instruction & 0x0F00) >> 8) as usize;
         let value = (instruction & 0x00FF) as u8;
-        program.variable_regsiters[register_name as usize] = value;
+        if program.variable_regsiters[register_name] == value {
+            program.program_counter += 2;
+        }
+    }
+    fn op_4(program: &mut Program, instruction: u16) {
+        let register_name = ((instruction & 0x0F00) >> 8) as usize;
+        let value = (instruction & 0x00FF) as u8;
+        if program.variable_regsiters[register_name] != value {
+            program.program_counter += 2;
+        }
+    }
+    fn op_5(program: &mut Program, instruction: u16) {
+        let x_register_name = ((instruction & 0x0F00) >> 8) as usize;
+        let y_register_name = ((instruction & 0x00F0) >> 4) as usize;
+        if program.variable_regsiters[x_register_name]
+            == program.variable_regsiters[y_register_name]
+        {
+            program.program_counter += 2;
+        }
+    }
+    fn op_6(program: &mut Program, instruction: u16) {
+        let register_name = ((instruction & 0x0F00) >> 8) as usize;
+        let value = (instruction & 0x00FF) as u8;
+        program.variable_regsiters[register_name] = value;
     }
     fn op_7(program: &mut Program, instruction: u16) {
-        let register_name = (instruction & 0x0F00) >> 8;
+        let register_name = ((instruction & 0x0F00) >> 8) as usize;
         let value = (instruction & 0x00FF) as u8;
-        program.variable_regsiters[register_name as usize] += value;
+        let register = &mut program.variable_regsiters[register_name];
+        *register = register.wrapping_add(value);
     }
-    fn op_8(program: &mut Program, instruction: u16) {}
-    fn op_9(program: &mut Program, instruction: u16) {}
+    // TODO: make this configurable for original interpreter
+    // https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#8xy6-and-8xye-shift
+    fn op_8(program: &mut Program, instruction: u16) {
+        let x_register_name = ((instruction & 0x0F00) >> 8) as usize;
+        let y_register_name = ((instruction & 0x00F0) >> 4) as usize;
+        let y_register = program.variable_regsiters[y_register_name];
+        let x_register = &mut program.variable_regsiters[x_register_name];
+        let op_type = instruction & 0x000F;
+        match op_type {
+            0x0 => {
+                *x_register = y_register;
+            }
+            0x1 => {
+                *x_register |= y_register;
+            }
+            0x2 => {
+                *x_register &= y_register;
+            }
+            0x3 => {
+                *x_register ^= y_register;
+            }
+            0x4 => {
+                let (new_value, overflow) = x_register.overflowing_add(y_register);
+                *x_register = new_value;
+                let overflow_value = if overflow { 1 } else { 0 };
+                program.variable_regsiters[0xF_usize] = overflow_value;
+            }
+            0x5 => {
+                *x_register -= y_register;
+            }
+            0x6 => {
+                let shifted_out = *x_register & 0b1;
+                let new_value = *x_register >> 1;
+                *x_register = new_value;
+                program.variable_regsiters[0xF_usize] = shifted_out;
+            }
+            0x7 => {
+                *x_register = y_register - *x_register;
+            }
+            0xE => {
+                let shifted_out = *x_register & 0b10000000;
+                let new_value = *x_register << 1;
+                *x_register = new_value;
+                program.variable_regsiters[0xF_usize] = shifted_out;
+            }
+            _ => panic!("This arithmetic operation is not supported"),
+        }
+    }
+    fn op_9(program: &mut Program, instruction: u16) {
+        let x_register_name = ((instruction & 0x0F00) >> 8) as usize;
+        let y_register_name = ((instruction & 0x00F0) >> 4) as usize;
+        if program.variable_regsiters[x_register_name]
+            != program.variable_regsiters[y_register_name]
+        {
+            program.program_counter += 2;
+        }
+    }
     #[allow(non_snake_case)]
     fn op_A(program: &mut Program, instruction: u16) {
         let location = instruction & 0x0FFF;
         program.index_register = location;
     }
     #[allow(non_snake_case)]
-    fn op_B(program: &mut Program, instruction: u16) {}
+    fn op_B(program: &mut Program, instruction: u16) {
+        // TODO: make this configurable with SUPER-CHIP
+        let jump_pointer = instruction & 0x0FFF;
+        let offset = program.variable_regsiters[0] as u16;
+        program.program_counter = jump_pointer + offset;
+    }
     #[allow(non_snake_case)]
-    fn op_C(program: &mut Program, instruction: u16) {}
+    fn op_C(program: &mut Program, instruction: u16) {
+        let r = (random() * (u8::MAX as f64)) as u8;
+        let register_name = ((instruction & 0x0F00) >> 8) as usize;
+        let value = (instruction & 0x00FF) as u8;
+        program.variable_regsiters[register_name] = value & r;
+    }
     #[allow(non_snake_case)]
     fn op_D(program: &mut Program, instruction: u16) {
         let x_register = (instruction & 0x0F00) >> 8;
@@ -246,7 +370,90 @@ impl Program {
         }
     }
     #[allow(non_snake_case)]
-    fn op_E(program: &mut Program, instruction: u16) {}
+    fn op_E(program: &mut Program, instruction: u16) {
+        let register_name = ((instruction & 0x0F00) >> 8) as usize;
+        let key = program.variable_regsiters[register_name];
+        let is_pressed = program.key_is_pressed(key);
+        let instr_type = instruction & 0x00FF;
+        match (instr_type, is_pressed) {
+            (0x9E, true) => {
+                program.program_counter += 2;
+            }
+            (0x9E, false) => {}
+            (0xA1, false) => {
+                program.program_counter += 2;
+            }
+            (0xA1, true) => {}
+            _ => panic!("This isntruction type shouldn't exist"),
+        }
+    }
     #[allow(non_snake_case)]
-    fn op_F(program: &mut Program, instruction: u16) {}
+    fn op_F(program: &mut Program, instruction: u16) {
+        let instr_type = (instruction & 0x00FF) as usize;
+        let register_name = (instruction & 0x0F00) >> 8;
+        program.f_op_table[instr_type](program, register_name);
+    }
+
+    #[allow(non_snake_case)]
+    fn op_FX07(program: &mut Program, register_name: u16) {
+        program.variable_regsiters[register_name as usize] = program.delay_timer;
+    }
+    #[allow(non_snake_case)]
+    fn op_FX0A(program: &mut Program, register_name: u16) {
+        for key in 0..0xF_u8 {
+            if program.key_is_pressed(key) {
+                program.variable_regsiters[register_name as usize] = key;
+                return;
+            }
+        }
+        program.program_counter -= 2;
+    }
+    #[allow(non_snake_case)]
+    fn op_FX15(program: &mut Program, register_name: u16) {
+        program.delay_timer = program.variable_regsiters[register_name as usize];
+    }
+    #[allow(non_snake_case)]
+    fn op_FX18(program: &mut Program, register_name: u16) {
+        program.sound_timer = program.variable_regsiters[register_name as usize];
+    }
+    #[allow(non_snake_case)]
+    fn op_FX1E(program: &mut Program, register_name: u16) {
+        program.index_register += program.variable_regsiters[register_name as usize] as u16;
+        // this counts as an "overflow" on some interpreters
+        if program.index_register > 0xFFF {
+            program.variable_regsiters[0xF_usize] = 1;
+        }
+    }
+    #[allow(non_snake_case)]
+    fn op_FX29(program: &mut Program, register_name: u16) {
+        let hex = program.variable_regsiters[register_name as usize] & 0x0F;
+        program.index_register =
+            program.memory[Self::FONT_START_ADDR + ((hex * 5) as usize)] as u16;
+    }
+    #[allow(non_snake_case)]
+    fn op_FX33(program: &mut Program, register_name: u16) {
+        let register_value = program.variable_regsiters[register_name as usize];
+        let d1 = (register_value % 10) as u8;
+        let d2 = ((register_value / 10) % 10) as u8;
+        let d3 = ((register_value / 100) % 10) as u8;
+        program.memory[program.index_register as usize] = d1;
+        program.memory[(program.index_register + 1) as usize] = d2;
+        program.memory[(program.index_register + 2) as usize] = d3;
+    }
+    #[allow(non_snake_case)]
+    fn op_FX55(program: &mut Program, register_name: u16) {
+        // TODO: if something breaks it's here because we should increment
+        // the i register as well
+        for i in 0..(register_name + 1) {
+            program.memory[(program.index_register + i) as usize] =
+                program.variable_regsiters[i as usize];
+        }
+    }
+    #[allow(non_snake_case)]
+    fn op_FX65(program: &mut Program, register_name: u16) {
+        for i in 0..(register_name + 1) {
+            program.variable_regsiters[i as usize] =
+                program.memory[(program.index_register + i) as usize];
+        }
+    }
 }

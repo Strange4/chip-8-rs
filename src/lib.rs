@@ -1,6 +1,5 @@
 mod app;
 mod emulator;
-mod handlers;
 mod ui;
 
 use std::panic;
