@@ -433,9 +433,9 @@ impl Program {
     #[allow(non_snake_case)]
     fn op_FX33(program: &mut Program, register_name: u16) {
         let register_value = program.variable_regsiters[register_name as usize];
-        let d1 = (register_value % 10) as u8;
-        let d2 = ((register_value / 10) % 10) as u8;
-        let d3 = ((register_value / 100) % 10) as u8;
+        let d1 = register_value % 10;
+        let d2 = (register_value / 10) % 10;
+        let d3 = (register_value / 100) % 10;
         program.memory[program.index_register as usize] = d1;
         program.memory[(program.index_register + 1) as usize] = d2;
         program.memory[(program.index_register + 2) as usize] = d3;
