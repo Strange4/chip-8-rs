@@ -2,16 +2,17 @@ use std::{cell::RefCell, rc::Rc, sync::Mutex};
 
 use log::info;
 use wasm_bindgen::{prelude::Closure, JsCast};
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement, Node};
 use web_time::{Duration, Instant};
 
 use crate::{
     emulator::{get_program, Program},
-    ui,
+    ui::{self, get_element},
 };
 
 const MIN_REPAINT_TIME: Duration = Duration::from_millis(16);
-static INTERVAL_HANDLE: Mutex<Option<i32>> = Mutex::new(None);
+pub static INTERVAL_HANDLE: Mutex<Option<i32>> = Mutex::new(None);
+pub static RENDER_DEBUGGER: Mutex<bool> = Mutex::new(false);
 
 pub struct Runner {
     last_update: Instant,
@@ -20,6 +21,7 @@ pub struct Runner {
     tick_number: i32,
     updates_per_second: f64,
     context: CanvasRenderingContext2d,
+    debugger_area: HtmlDivElement,
 }
 
 impl Runner {
@@ -30,7 +32,8 @@ impl Runner {
             last_info: Instant::now(),
             tick_number: 0,
             updates_per_second: 1_000_000.0,
-            context: get_context(),
+            context: get_canvas_context(),
+            debugger_area: get_debugger_area(),
         }
     }
 
@@ -58,7 +61,7 @@ impl Runner {
 
             if app.last_paint.elapsed() > MIN_REPAINT_TIME {
                 emulator.timer_tick();
-                Runner::render(&emulator, &app.context);
+                Runner::render(&emulator, &app.context, &app.debugger_area);
                 app.last_paint = Instant::now();
             }
 
@@ -81,9 +84,8 @@ impl Runner {
         })
     }
 
-    fn render(emulator: &Program, ctx: &CanvasRenderingContext2d) {
-        let display = emulator.get_display();
-        ui::render_emulator(display, ctx);
+    fn render(emulator: &Program, ctx: &CanvasRenderingContext2d, debugger_area: &HtmlDivElement) {
+        ui::render_emulator(emulator, ctx, debugger_area);
     }
 }
 
@@ -96,13 +98,17 @@ pub fn canvas() -> HtmlCanvasElement {
         .expect("Could not dyn into canvas")
 }
 
-fn get_context() -> CanvasRenderingContext2d {
+pub fn get_canvas_context() -> CanvasRenderingContext2d {
     canvas()
         .get_context("2d")
         .expect("Could not get the canvas context")
         .expect("There was no context")
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .expect("Couldn't transform the js object into canvas context")
+}
+
+pub fn get_debugger_area() -> HtmlDivElement {
+    get_element(&document(), "#debugger")
 }
 
 fn set_timeout(f: &Closure<dyn FnMut()>) {

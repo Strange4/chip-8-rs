@@ -46,4 +46,5 @@ pub fn set_handlers() {
         .add_event_listener_with_event_listener("keyup", key_up_handler.as_ref().unchecked_ref())
         .expect("Could not set keydown event listener");
     key_up_handler.forget();
+    key_down_handler.forget();
 }
