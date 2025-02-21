@@ -1,11 +1,168 @@
+:root {
+    --bg_h: #1d2021;
+    --bg: #282828;
+    --bg_s: #32302f;
+    --bg1: #3c3836;
+    --bg2: #504945;
+    --bg3: #665c54;
+    --bg4: #7c6f64;
+
+    --fg: #fbf1c7;
+    --fg1: #ebdbb2;
+    --fg2: #d5c4a1;
+    --fg3: #bdae93;
+    --fg4: #a89984;
+
+    --red: #fb4934;
+    --green: #b8bb26;
+    --yellow: #fabd2f;
+    --blue: #83a598;
+    --purple: #d3869b;
+    --aqua: #8ec07c;
+    --gray: #928374;
+    --orange: #fe8019;
+
+    --red-dim: #cc2412;
+    --green-dim: #98971a;
+    --yellow-dim: #d79921;
+    --blue-dim: #458588;
+    --purple-dim: #b16286;
+    --aqua-dim: #689d6a;
+    --gray-dim: #a89984;
+    --orange-dim: #d65d0e;
+
+    --scrollbar-size: 15px;
+}
+
+/* Normal Colors */
+
+.red {
+    color: var(--red);
+}
+
+.green {
+    color: var(--green);
+}
+
+.yellow {
+    color: var(--yellow);
+}
+
+.blue {
+    color: var(--blue);
+}
+
+.purple {
+    color: var(--purple);
+}
+
+.aqua {
+    color: var(--aqua);
+}
+
+.gray {
+    color: var(--gray);
+}
+
+.orange {
+    color: var(--orange);
+}
+
+/* Dim Colors */
+
+.red-dim {
+    color: var(--red-dim);
+}
+
+.green-dim {
+    color: var(--green-dim);
+}
+
+.yellow-dim {
+    color: var(--yellow-dim);
+}
+
+.blue-dim {
+    color: var(--blue-dim);
+}
+
+.purple-dim {
+    color: var(--purple-dim);
+}
+
+.aqua-dim {
+    color: var(--aqua-dim);
+}
+
+.gray-dim {
+    color: var(--gray-dim);
+}
+
+.orange-dim {
+    color: var(--orange-dim);
+}
+
+/* Foreground Colors */
+
+.fg {
+    color: var(--fg);
+}
+
+.fg1 {
+    color: var(--fg1);
+}
+
+.fg2 {
+    color: var(--fg2);
+}
+
+.fg3 {
+    color: var(--fg3);
+}
+
+.fg4 {
+    color: var(--fg4);
+}
+
+/* Background Colors */
+
+.bg-hard {
+    color: var(--bg_h);
+}
+
+.bg {
+    color: var(--bg);
+}
+
+.bg-soft {
+    color: var(--bg_s);
+}
+
+.bg1 {
+    color: var(--bg1);
+}
+
+.bg2 {
+    color: var(--bg2);
+}
+
+.bg3 {
+    color: var(--bg3);
+}
+
+.bg4 {
+    color: var(--bg4);
+}
+
 html {
-    background-color: #242424;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg);
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 html,
 body {
     width: 100%;
+    height: 100%;
     margin: 0;
 }
 
@@ -20,7 +177,7 @@ canvas {
 button {
     min-width: 130px;
     height: 40px;
-    color: #fff;
+    color: var(--fg);
     padding: 5px 10px;
     font-weight: bold;
     cursor: pointer;
@@ -31,7 +188,7 @@ button {
     overflow: hidden;
     border-radius: 5px;
     border: none;
-    background-color: #343a40
+    background-color: var(--bg1);
 }
 
 button:hover {
@@ -56,10 +213,105 @@ button:after {
     transition: 0.4s;
 }
 
+#debugger {
+    margin: 1rem;
+    overflow: scroll;
+    max-height: 50vh;
+}
+
 #controls {
     margin: 1rem;
 }
 
-#controls input {
+#load_rom {
     opacity: 0;
+}
+
+::-webkit-scrollbar {
+    height: var(--scrollbar-size);
+    width: var(--scrollbar-size);
+    background-color: var(--bg);
+}
+
+::-webkit-scrollbar-track {
+    border: 0;
+}
+
+::-webkit-scrollbar-thumb {
+    /* border-radius: 8px; */
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+::-webkit-scrollbar-corner {
+    background: rgba(0, 0, 0, 0);
+}
+
+
+/* the table stuff */
+table {
+    border-spacing: 0;
+}
+
+table td:hover {
+    color: var(--green);
+}
+
+table thead th {
+    background-color: var(--bg1);
+    border: solid 1px;
+    color: var(--fg);
+    padding: 10px;
+    text-align: left;
+}
+
+table tbody td {
+    border: solid 1px var(--fg4);
+    color: var(--fg3);
+    padding: 10px;
+}
+
+table {
+    overflow: hidden;
+    z-index: 1;
+}
+
+table tbody td,
+table thead th {
+    position: relative;
+}
+
+table tbody td:hover::before {
+    background-color: var(--bg_s);
+    content: '\00a0';
+    height: 100%;
+    left: -5000px;
+    position: absolute;
+    top: 0;
+    width: 10000px;
+    z-index: -1;
+}
+
+table tbody td:hover::after {
+    background-color: var(--bg_s);
+    content: '\00a0';
+    height: 10000px;
+    left: 0;
+    position: absolute;
+    top: -5000px;
+    width: 100%;
+    z-index: -1;
+}
+
+.checkbox {
+    min-width: 130px;
+    height: 30px;
+    color: var(--fg);
+    padding: 5px 10px;
+    transition: all 0.3s ease;
+    display: inline-block;
+    line-height: 30px;
+    border-radius: 5px;
+    border: none;
+    background-color: var(--bg1);
+    accent-color: var(--yellow);
 }

@@ -16,17 +16,17 @@ pub fn get_program() -> &'static Mutex<Program> {
 }
 
 pub struct Program {
-    memory: [u8; 4096],
-    display: [u8; DISPLAY_WIDTH as usize * DISPLAY_HEIGHT as usize * RGBA as usize],
-    program_counter: u16,
-    index_register: u16,
-    call_stack: Vec<u16>,
-    delay_timer: u8,
-    sound_timer: u8,
-    variable_regsiters: [u8; 16],
-    op_table: [OpCodeFn; 0xF + 1],
-    f_op_table: [OpCodeFn; 0x65 + 1],
-    pressed_keys: u16, // each bit tells if the key is pressed
+    pub memory: [u8; 4096],
+    pub display: [u8; DISPLAY_WIDTH as usize * DISPLAY_HEIGHT as usize * RGBA as usize],
+    pub program_counter: u16,
+    pub index_register: u16,
+    pub call_stack: Vec<u16>,
+    pub delay_timer: u8,
+    pub sound_timer: u8,
+    pub variable_regsiters: [u8; 16],
+    pub op_table: [OpCodeFn; 0xF + 1],
+    pub f_op_table: [OpCodeFn; 0x65 + 1],
+    pub pressed_keys: u16, // each bit tells if the key is pressed
 }
 
 type OpCodeFn = fn(program: &mut Program, instruction: u16);
