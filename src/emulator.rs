@@ -1,4 +1,7 @@
-use std::sync::{Mutex, OnceLock};
+use std::{
+    ops::SubAssign,
+    sync::{Mutex, OnceLock},
+};
 
 use web_sys::js_sys::Math::random;
 
@@ -222,7 +225,7 @@ impl Program {
     fn op_2(program: &mut Program, instruction: u16) {
         // call the function
         let pointer = instruction & 0x0FFF;
-        program.call_stack.push(pointer);
+        program.call_stack.push(program.program_counter);
         program.program_counter = pointer;
     }
     fn op_3(program: &mut Program, instruction: u16) {
@@ -265,47 +268,58 @@ impl Program {
         let x_register_name = ((instruction & 0x0F00) >> 8) as usize;
         let y_register_name = ((instruction & 0x00F0) >> 4) as usize;
         let y_register = program.variable_regsiters[y_register_name];
-        let x_register = &mut program.variable_regsiters[x_register_name];
+        let mut x_register = program.variable_regsiters[x_register_name];
         let op_type = instruction & 0x000F;
         match op_type {
             0x0 => {
-                *x_register = y_register;
+                x_register = y_register;
             }
             0x1 => {
-                *x_register |= y_register;
+                x_register |= y_register;
             }
             0x2 => {
-                *x_register &= y_register;
+                x_register &= y_register;
             }
             0x3 => {
-                *x_register ^= y_register;
+                x_register ^= y_register;
             }
             0x4 => {
                 let (new_value, overflow) = x_register.overflowing_add(y_register);
-                *x_register = new_value;
+                x_register = new_value;
                 let overflow_value = if overflow { 1 } else { 0 };
                 program.variable_regsiters[0xF_usize] = overflow_value;
             }
             0x5 => {
-                *x_register -= y_register;
+                if x_register > y_register {
+                    program.variable_regsiters[0xF] = 1;
+                } else {
+                    program.variable_regsiters[0xF] = 0;
+                }
+                x_register = x_register.wrapping_sub(y_register);
             }
             0x6 => {
-                let shifted_out = *x_register & 0b1;
-                let new_value = *x_register >> 1;
-                *x_register = new_value;
+                let shifted_out = x_register & 0b1;
+                let new_value = x_register >> 1;
+                x_register = new_value;
                 program.variable_regsiters[0xF_usize] = shifted_out;
             }
             0x7 => {
-                *x_register = y_register - *x_register;
+                if y_register > x_register {
+                    program.variable_regsiters[0xF] = 1;
+                } else {
+                    program.variable_regsiters[0xF] = 0;
+                }
+                x_register = y_register.wrapping_sub(x_register);
             }
             0xE => {
-                let shifted_out = *x_register & 0b10000000;
-                let new_value = *x_register << 1;
-                *x_register = new_value;
+                let shifted_out = x_register & 0b10000000;
+                let new_value = x_register << 1;
+                x_register = new_value;
                 program.variable_regsiters[0xF_usize] = shifted_out;
             }
             _ => panic!("This arithmetic operation is not supported"),
         }
+        program.variable_regsiters[x_register_name] = x_register;
     }
     fn op_9(program: &mut Program, instruction: u16) {
         let x_register_name = ((instruction & 0x0F00) >> 8) as usize;
