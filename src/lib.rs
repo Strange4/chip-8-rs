@@ -1,8 +1,10 @@
 mod app;
+mod debugger;
 mod emulator;
 mod handlers;
 mod keys;
 mod ui;
+
 use std::panic;
 use wasm_bindgen::prelude::wasm_bindgen;
 extern crate console_error_panic_hook;

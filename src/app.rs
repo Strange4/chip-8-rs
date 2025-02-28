@@ -6,13 +6,12 @@ use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement, Node}
 use web_time::{Duration, Instant};
 
 use crate::{
+    debugger::INTERVAL_HANDLE,
     emulator::{get_program, Program},
     ui::{self, get_element},
 };
 
 const MIN_REPAINT_TIME: Duration = Duration::from_millis(16);
-pub static INTERVAL_HANDLE: Mutex<Option<i32>> = Mutex::new(None);
-pub static RENDER_DEBUGGER: Mutex<bool> = Mutex::new(false);
 
 pub struct Runner {
     last_update: Instant,

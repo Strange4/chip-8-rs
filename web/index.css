@@ -217,6 +217,13 @@ button:after {
     margin: 1rem;
     overflow: scroll;
     max-height: 50vh;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+#debugger div {
+    max-height: 50vh;
 }
 
 #controls {
@@ -252,7 +259,7 @@ table {
     border-spacing: 0;
 }
 
-table td:hover {
+.hovering-table td:hover {
     color: var(--green);
 }
 
@@ -264,9 +271,12 @@ table thead th {
     text-align: left;
 }
 
+table tbody {
+    color: var(--fg3);
+}
+
 table tbody td {
     border: solid 1px var(--fg4);
-    color: var(--fg3);
     padding: 10px;
 }
 
@@ -280,7 +290,7 @@ table thead th {
     position: relative;
 }
 
-table tbody td:hover::before {
+.hovering-table tbody td:hover::before {
     background-color: var(--bg_s);
     content: '\00a0';
     height: 100%;
@@ -291,7 +301,7 @@ table tbody td:hover::before {
     z-index: -1;
 }
 
-table tbody td:hover::after {
+.hovering-table tbody td:hover::after {
     background-color: var(--bg_s);
     content: '\00a0';
     height: 10000px;
@@ -300,6 +310,10 @@ table tbody td:hover::after {
     top: -5000px;
     width: 100%;
     z-index: -1;
+}
+
+table tbody .breakpoint {
+    color: var(--red);
 }
 
 .checkbox {

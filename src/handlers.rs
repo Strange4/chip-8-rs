@@ -4,6 +4,7 @@ use web_sys::{js_sys::Uint8Array, Document, Event, HtmlButtonElement, HtmlInputE
 
 use crate::{
     app::{self, window, Runner},
+    debugger::{INTERVAL_HANDLE, RENDER_DEBUGGER},
     emulator,
     ui::{get_element, render_emulator},
 };
@@ -71,7 +72,7 @@ fn step_button_handler(document: &Document) {
 }
 
 fn stop_runner() {
-    let handle = app::INTERVAL_HANDLE
+    let handle = INTERVAL_HANDLE
         .lock()
         .expect("Could not get intveral handle");
     if handle.is_some() {
@@ -87,14 +88,14 @@ fn debugger_checkbox_handler(document: &Document) {
             .expect("Could not get target of event")
             .dyn_into()
             .expect("Could not dyn into a checkbox");
-        let mut a = app::RENDER_DEBUGGER
+        let mut a = RENDER_DEBUGGER
             .lock()
             .expect("Could not acquire debugger variable");
         *a = checkbox.checked();
     });
 }
 
-fn add_event_listener(target: &web_sys::EventTarget, event_name: &str, func: fn(e: Event)) {
+pub fn add_event_listener(target: &web_sys::EventTarget, event_name: &str, func: fn(e: Event)) {
     let closure: Closure<dyn Fn(Event)> = Closure::new(func);
     target
         .add_event_listener_with_event_listener(event_name, closure.as_ref().unchecked_ref())
