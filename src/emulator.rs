@@ -1,7 +1,4 @@
-use std::{
-    ops::SubAssign,
-    sync::{Mutex, OnceLock},
-};
+use std::sync::{Mutex, OnceLock};
 
 use web_sys::js_sys::Math::random;
 
@@ -107,9 +104,6 @@ impl Program {
 
     pub fn width() -> u8 {
         DISPLAY_WIDTH
-    }
-    pub fn height() -> u8 {
-        DISPLAY_HEIGHT
     }
 
     #[inline]
@@ -262,9 +256,9 @@ impl Program {
         let register = &mut program.variable_regsiters[register_name];
         *register = register.wrapping_add(value);
     }
-    // TODO: make this configurable for original interpreter
-    // https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#8xy6-and-8xye-shift
     fn op_8(program: &mut Program, instruction: u16) {
+        // TODO: make this configurable for original interpreter
+        // https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#8xy6-and-8xye-shift
         let x_register_name = ((instruction & 0x0F00) >> 8) as usize;
         let y_register_name = ((instruction & 0x00F0) >> 4) as usize;
         let y_register = program.variable_regsiters[y_register_name];
@@ -407,7 +401,6 @@ impl Program {
         let register_name = (instruction & 0x0F00) >> 8;
         program.f_op_table[instr_type](program, register_name);
     }
-
     #[allow(non_snake_case)]
     fn op_FX07(program: &mut Program, register_name: u16) {
         program.variable_regsiters[register_name as usize] = program.delay_timer;
