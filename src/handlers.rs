@@ -1,20 +1,24 @@
 use log::info;
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
-use web_sys::{js_sys::Uint8Array, Document, Event, HtmlButtonElement, HtmlInputElement};
+use web_sys::{
+    js_sys::Uint8Array, Document, Event, HtmlButtonElement, HtmlDivElement, HtmlInputElement, HtmlTableRowElement,
+};
 
 use crate::{
-    app::{self, window, Runner},
-    debugger::{INTERVAL_HANDLE, RENDER_DEBUGGER},
-    emulator,
-    ui::{get_element, render_emulator},
+    app::{self, get_canvas_context, window, Runner},
+    debugger::{render_debugger, BREAKPOINTS, INTERVAL_HANDLE, RENDER_DEBUGGER},
+    emulator::{self, get_program},
+    ui::{add_class_name, get_element, remove_class_name, render_emulator, to_number},
 };
 
 pub fn set_handlers() {
-    start_button_handler(&app::document());
-    stop_button_handler(&app::document());
-    step_button_handler(&app::document());
-    load_rom_handler(&app::document());
-    debugger_checkbox_handler(&app::document());
+    let document = &app::document();
+    start_button_handler(document);
+    stop_button_handler(document);
+    step_button_handler(document);
+    load_rom_handler(document);
+    debugger_checkbox_handler(document);
+    toggle_breakpoint_handler(document);
 }
 
 fn start_button_handler(document: &Document) {
@@ -44,7 +48,9 @@ fn load_rom_handler(document: &Document) {
 
             let closure = Closure::new(|js_value: JsValue| {
                 let u8_vec = Uint8Array::new(&js_value).to_vec();
-                emulator::get_program().lock().unwrap().load_rom(&u8_vec);
+                let mut program = emulator::get_program().lock().unwrap();
+                program.load_rom(&u8_vec);
+                render_emulator(&program, &get_canvas_context());
                 info!("Loaded rom!");
             });
             let _ = file.array_buffer().then(&closure);
@@ -62,11 +68,7 @@ fn step_button_handler(document: &Document) {
             .expect("Could not lock the program");
         emulator.tick();
         emulator.timer_tick();
-        render_emulator(
-            &emulator,
-            &app::get_canvas_context(),
-            &app::get_debugger_area(),
-        );
+        render_emulator(&emulator, &app::get_canvas_context());
         info!("stepped through {}", emulator.program_counter)
     });
 }
@@ -83,16 +85,69 @@ fn stop_runner() {
 fn debugger_checkbox_handler(document: &Document) {
     let checkbox: HtmlInputElement = get_element(document, "#show_debugger");
     add_event_listener(&checkbox, "change", |e| {
+        let document = &crate::app::document();
         let checkbox: HtmlInputElement = e
             .current_target()
             .expect("Could not get target of event")
             .dyn_into()
             .expect("Could not dyn into a checkbox");
+        let debugger_area: HtmlDivElement = get_element(document, "#debugger");
+        let is_checked = checkbox.checked();
+        if is_checked {
+            remove_class_name(&debugger_area, "off");
+            // debugger_area.set_class_name("");
+        } else {
+            add_class_name(&debugger_area, "off");
+            // debugger_area.set_class_name("off");
+        }
+
         let mut a = RENDER_DEBUGGER
             .lock()
             .expect("Could not acquire debugger variable");
-        *a = checkbox.checked();
+        *a = is_checked;
+        // drop the mutex before rendering since it needs it
+        drop(a);
+        let program = get_program().lock().unwrap();
+        render_debugger(&program);
     });
+}
+
+fn toggle_breakpoint_handler(document: &Document) {
+    let rows = document
+        .query_selector_all("#memory-table tr")
+        .expect("The query was wrong");
+    for i in 0..rows.length() {
+        let row = rows.item(i).unwrap();
+        add_event_listener(&row, "click", |e| {
+            let row: HtmlTableRowElement = e
+                .current_target()
+                .expect("Could not get row in event")
+                .dyn_into()
+                .expect("Could not dyn into a row");
+
+            let address: usize = to_number(
+                &row.child_nodes()
+                    .item(1)
+                    .expect("Could not get the child node for the address"),
+            );
+
+            let is_selected = row.class_name().contains("breakpoint");
+            let mut breakpoints = BREAKPOINTS
+                .lock()
+                .expect("Could not acquire breakpoint lock");
+            if is_selected {
+                row.set_class_name("");
+                let index = breakpoints
+                    .iter()
+                    .position(|breakpoint| *breakpoint == address)
+                    .unwrap();
+                breakpoints.remove(index);
+            } else {
+                row.set_class_name("breakpoint");
+                breakpoints.push(address);
+            }
+        });
+    }
 }
 
 pub fn add_event_listener(target: &web_sys::EventTarget, event_name: &str, func: fn(e: Event)) {

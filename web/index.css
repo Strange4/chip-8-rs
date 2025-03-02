@@ -166,6 +166,11 @@ body {
     margin: 0;
 }
 
+body {
+    display: flex;
+    flex-direction: row;
+}
+
 canvas {
     width: 100%;
     image-rendering: pixelated;
@@ -213,17 +218,23 @@ button:after {
     transition: 0.4s;
 }
 
+#display {
+    width: 100%;
+}
+
 #debugger {
     margin: 1rem;
-    overflow: scroll;
-    max-height: 50vh;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
+    /* overflow: scroll; */
+    min-width: fit-content;
+    /* display: flex; */
+    /* flex-direction: row; */
 }
 
 #debugger div {
-    max-height: 50vh;
+    /* max-height: 50vh; */
+    display: inline-block;
+    overflow: scroll;
+    min-width: fit-content;
 }
 
 #controls {
@@ -267,7 +278,7 @@ table thead th {
     background-color: var(--bg1);
     border: solid 1px;
     color: var(--fg);
-    padding: 10px;
+    /* padding: 10px; */
     text-align: left;
 }
 
@@ -276,8 +287,9 @@ table tbody {
 }
 
 table tbody td {
-    border: solid 1px var(--fg4);
-    padding: 10px;
+    min-width: fit-content;
+    white-space: nowrap;
+    padding: 1px;
 }
 
 table {
@@ -316,6 +328,10 @@ table tbody .breakpoint {
     color: var(--red);
 }
 
+table tbody .current-instruction {
+    background-color: rgba(163, 229, 255, 0.2);
+}
+
 .checkbox {
     min-width: 130px;
     height: 30px;
@@ -328,4 +344,8 @@ table tbody .breakpoint {
     border: none;
     background-color: var(--bg1);
     accent-color: var(--yellow);
+}
+
+.off {
+    display: none;
 }
