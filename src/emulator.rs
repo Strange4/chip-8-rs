@@ -1,11 +1,15 @@
 use std::sync::{Mutex, OnceLock};
 
+use log::info;
 use web_sys::js_sys::Math::random;
+use web_time::Instant;
+
+use crate::ui;
 
 const DISPLAY_WIDTH: u8 = 64;
 const DISPLAY_HEIGHT: u8 = 32;
-const ON_COLOR: [u8; 4] = Program::hex_to_rgba(0xffffffff);
-const OFF_COLOR: [u8; 4] = Program::hex_to_rgba(0x0);
+const ON_COLOR: [u8; 4] = Program::hex_to_rgba(0x1d2021ff);
+const OFF_COLOR: [u8; 4] = Program::hex_to_rgba(0xfabd2fff);
 const RGBA: u8 = 4;
 
 pub fn get_program() -> &'static Mutex<Program> {
@@ -49,13 +53,14 @@ impl Program {
             f_op_table: [NULL_OP; 0x65 + 1],
             pressed_keys: 0,
         };
+        p.clear_display();
         p.set_font();
         p.set_instruction_table();
         p
     }
 
     pub fn reset(&mut self) {
-        self.display.fill(0);
+        self.clear_display();
         self.program_counter = Self::START_ADDRESS;
         self.index_register = 0;
         self.call_stack.clear();
@@ -73,8 +78,13 @@ impl Program {
     }
 
     pub fn timer_tick(&mut self) {
-        self.delay_timer = self.delay_timer.wrapping_sub(1);
-        self.sound_timer = self.sound_timer.wrapping_sub(1);
+        self.delay_timer = self.delay_timer.saturating_sub(1);
+        self.sound_timer = self.sound_timer.saturating_sub(1);
+        if self.sound_timer != 0 {
+            ui::beep();
+        } else {
+            ui::stop_beep();
+        }
     }
 
     pub fn tick(&mut self) {
@@ -134,6 +144,13 @@ impl Program {
         ];
         for (i, value) in CHARACTER_FONTS.iter().enumerate() {
             self.memory[i + Self::FONT_START_ADDR] = *value;
+        }
+    }
+
+    fn clear_display(&mut self) {
+        // there must be a better way of filling this
+        for i in 0..self.display.len() {
+            self.display[i] = OFF_COLOR[i % 4];
         }
     }
 
@@ -202,7 +219,7 @@ impl Program {
         match instruction {
             // clear screen
             0x00E0 => {
-                program.display.fill(0);
+                program.clear_display();
             },
             // return from function
             0x00EE => {
@@ -257,63 +274,62 @@ impl Program {
         *register = register.wrapping_add(value);
     }
     fn op_8(program: &mut Program, instruction: u16) {
-        // TODO: make this configurable for original interpreter
+        // TODO: make these configurable for more modern interpreter
         // https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#8xy6-and-8xye-shift
+        // https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#fx55-and-fx65-store-and-load-memory
         let x_register_name = ((instruction & 0x0F00) >> 8) as usize;
         let y_register_name = ((instruction & 0x00F0) >> 4) as usize;
         let y_register = program.variable_regsiters[y_register_name];
-        let mut x_register = program.variable_regsiters[x_register_name];
+
+        // this depends on the target platform: we default to 0 instead of VF
+        // since we choose to suport Chip 8 only, it defaults the flag to 0
+        let mut f_flag_value = 0;
+        let x_register = &mut program.variable_regsiters[x_register_name];
+
         let op_type = instruction & 0x000F;
         match op_type {
             0x0 => {
-                x_register = y_register;
+                *x_register = y_register;
             }
             0x1 => {
-                x_register |= y_register;
+                *x_register |= y_register;
             }
             0x2 => {
-                x_register &= y_register;
+                *x_register &= y_register;
             }
             0x3 => {
-                x_register ^= y_register;
+                *x_register ^= y_register;
             }
             0x4 => {
                 let (new_value, overflow) = x_register.overflowing_add(y_register);
-                x_register = new_value;
+                *x_register = new_value;
                 let overflow_value = if overflow { 1 } else { 0 };
-                program.variable_regsiters[0xF_usize] = overflow_value;
+                f_flag_value = overflow_value;
             }
             0x5 => {
-                if x_register > y_register {
-                    program.variable_regsiters[0xF] = 1;
-                } else {
-                    program.variable_regsiters[0xF] = 0;
-                }
-                x_register = x_register.wrapping_sub(y_register);
+                f_flag_value = if *x_register >= y_register { 1 } else { 0 };
+                *x_register = x_register.wrapping_sub(y_register);
             }
             0x6 => {
-                let shifted_out = x_register & 0b1;
-                let new_value = x_register >> 1;
-                x_register = new_value;
-                program.variable_regsiters[0xF_usize] = shifted_out;
+                let shifted_out = y_register & 0b1;
+                let new_value = y_register >> 1;
+                *x_register = new_value;
+                f_flag_value = shifted_out;
             }
             0x7 => {
-                if y_register > x_register {
-                    program.variable_regsiters[0xF] = 1;
-                } else {
-                    program.variable_regsiters[0xF] = 0;
-                }
-                x_register = y_register.wrapping_sub(x_register);
+                f_flag_value = if y_register >= *x_register { 1 } else { 0 };
+                *x_register = y_register.wrapping_sub(*x_register);
             }
             0xE => {
-                let shifted_out = x_register & 0b10000000;
-                let new_value = x_register << 1;
-                x_register = new_value;
-                program.variable_regsiters[0xF_usize] = shifted_out;
+                let shifted_out = (y_register & 0b10000000) >> 7;
+                let new_value = y_register << 1;
+                *x_register = new_value;
+                f_flag_value = shifted_out;
             }
             _ => panic!("This arithmetic operation is not supported"),
         }
-        program.variable_regsiters[x_register_name] = x_register;
+
+        program.variable_regsiters[0xF] = f_flag_value;
     }
     fn op_9(program: &mut Program, instruction: u16) {
         let x_register_name = ((instruction & 0x0F00) >> 8) as usize;
@@ -440,27 +456,30 @@ impl Program {
     #[allow(non_snake_case)]
     fn op_FX33(program: &mut Program, register_name: u16) {
         let register_value = program.variable_regsiters[register_name as usize];
-        let d1 = register_value % 10;
+        let d1 = register_value / 100;
         let d2 = (register_value / 10) % 10;
-        let d3 = (register_value / 100) % 10;
+        let d3 = register_value % 10;
         program.memory[program.index_register as usize] = d1;
         program.memory[(program.index_register + 1) as usize] = d2;
         program.memory[(program.index_register + 2) as usize] = d3;
     }
     #[allow(non_snake_case)]
     fn op_FX55(program: &mut Program, register_name: u16) {
-        // TODO: if something breaks it's here because we should increment
-        // the i register as well
+        // Since we are targeting the original chip 8,
+        // we also increment the i register
+
         for i in 0..(register_name + 1) {
-            program.memory[(program.index_register + i) as usize] =
+            program.memory[program.index_register as usize] =
                 program.variable_regsiters[i as usize];
+            program.index_register += 1;
         }
     }
     #[allow(non_snake_case)]
     fn op_FX65(program: &mut Program, register_name: u16) {
         for i in 0..(register_name + 1) {
             program.variable_regsiters[i as usize] =
-                program.memory[(program.index_register + i) as usize];
+                program.memory[program.index_register as usize];
+            program.index_register += 1;
         }
     }
 }

@@ -4,13 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Testing</title>
+    <title>Chip8-RS</title>
     <link rel="stylesheet" href="index.css">
+    <link rel="icon" type="image/png" href="./assets/favicon.png">
     <script defer type="module" src="index.js"></script>
 </head>
 
 <body>
     <div id="display">
+        <audio id="beep" autoplay="true" loop="true" muted="true"
+            src="./assets/bleep-censorship-sound-wav-74691.mp3"></audio>
         <canvas width="64" height="32"></canvas>
 
         <div id="controls">
@@ -21,11 +24,7 @@
             <!-- So we can have a nice button -->
             <button onclick="document.querySelector('#load_rom').click()">Load Rom</button>
             <input style="display: none;" id="load_rom" name="load_rom" type="file" accept=".ch8">
-
-            <div class="checkbox">
-                <input type="checkbox" name="show_debugger" id="show_debugger">
-                <label for="show_debugger">Show Debugger</label>
-            </div>
+            <button id="show_debugger">Show Debugger</button>
 
         </div>
     </div>
@@ -34,39 +33,43 @@
             <table id="registers-table">
                 <tbody>
                     <tr>
-                        <td>V[1]=</td>
+                        <td>V[0] =</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[2]=</td>
+                        <td>V[1] =</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[3]=</td>
+                        <td>V[2] =</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[4]=</td>
+                        <td>V[3] =</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[5]=</td>
+                        <td>V[4] =</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[6]=</td>
+                        <td>V[5] =</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[7]=</td>
+                        <td>V[6] =</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[8]=</td>
+                        <td>V[7] =</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[9]=</td>
+                        <td>V[8] =</td>
+                        <td>0</td>
+                    </tr>
+                    <tr>
+                        <td>V[9] =</td>
                         <td>0</td>
                     </tr>
                     <tr>
@@ -91,10 +94,6 @@
                     </tr>
                     <tr>
                         <td>V[15]=</td>
-                        <td>0</td>
-                    </tr>
-                    <tr>
-                        <td>V[16]=</td>
                         <td>0</td>
                     </tr>
                 </tbody>

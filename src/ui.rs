@@ -1,14 +1,15 @@
-use std::str::FromStr;
+use std::{
+    str::FromStr,
+    sync::{Mutex, OnceLock},
+};
 
 use crate::{
-    app::document,
     debugger::{render_debugger, RENDER_DEBUGGER},
     emulator::Program,
+    runner::document,
 };
-use log::info;
 use wasm_bindgen::{Clamped, JsCast};
-use web_sys::{CanvasRenderingContext2d, Document, Element, ImageData, Node};
-use web_time::Instant;
+use web_sys::{CanvasRenderingContext2d, Document, Element, HtmlAudioElement, ImageData, Node};
 
 pub fn render_emulator(program: &Program, ctx: &CanvasRenderingContext2d) {
     let width = Program::width() as u32;
@@ -18,11 +19,11 @@ pub fn render_emulator(program: &Program, ctx: &CanvasRenderingContext2d) {
 
     ctx.put_image_data(&data, 0.0, 0.0)
         .expect("Could not put image data");
-    let start = Instant::now();
+    // let start = Instant::now();
     if *RENDER_DEBUGGER.lock().unwrap() {
         render_debugger(program);
     }
-    info!("Rendering debugger took {:?}", start.elapsed());
+    // info!("Rendering debugger took {:?}", start.elapsed());
 }
 
 pub fn create_element<T: JsCast>(name: &str) -> T {
@@ -34,22 +35,13 @@ pub fn create_element<T: JsCast>(name: &str) -> T {
 }
 
 pub fn get_element<T: JsCast>(document: &Document, id: &str) -> T {
+    let type_name = std::any::type_name::<T>();
     document
         .query_selector(id)
         .expect("The query was wrong")
-        .unwrap_or_else(|| {
-            panic!(
-                "The element {} could not be found",
-                std::any::type_name::<T>()
-            )
-        })
+        .expect(&format!("The element {type_name} could not be found"))
         .dyn_into()
-        .unwrap_or_else(|_| {
-            panic!(
-                "Could not dyn into the element {}",
-                std::any::type_name::<T>()
-            )
-        })
+        .expect(&format!("Could not dyn into the element {type_name}"))
 }
 
 pub fn to_number<T>(node: &Node) -> T
@@ -72,4 +64,23 @@ pub fn add_class_name(element: &Element, name: &str) {
 pub fn remove_class_name(element: &Element, name: &str) {
     let new_classes = element.class_name().replace(name, "").replace("  ", "");
     element.set_class_name(new_classes.trim());
+}
+
+fn audio() -> HtmlAudioElement {
+    document()
+        .query_selector("#beep")
+        .unwrap()
+        .unwrap()
+        .dyn_into::<HtmlAudioElement>()
+        .unwrap()
+}
+
+// the audio is continuously playing, we only unmute it to have a sound.
+// this is faster and easier than having play/pause
+pub fn beep() {
+    audio().set_muted(false);
+}
+
+pub fn stop_beep() {
+    audio().set_muted(true);
 }

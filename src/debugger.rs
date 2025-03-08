@@ -4,8 +4,8 @@ use wasm_bindgen::JsCast;
 use web_sys::{HtmlTableElement, HtmlTableRowElement, Node};
 
 use crate::{
-    app::document,
     emulator::Program,
+    runner::document,
     ui::{add_class_name, get_element, remove_class_name, to_number},
 };
 
@@ -96,16 +96,8 @@ fn render_memory(memory: &[u8], program_counter: usize, table: &HtmlTableElement
         }
         if address == program_counter {
             add_class_name(&row, "current-instruction");
-            // let mut classes = row.class_name();
-            // classes.push_str(" current-instruction");
-            // row.set_class_name(&classes);
         } else {
             remove_class_name(&row, "current-instruction");
-            // row.set_class_name(
-            //     row.class_name()
-            //         .replace(" current-instruction", "")
-            //         .as_str(),
-            // );
         }
         let is_breakpoint = BREAKPOINTS
             .lock()

@@ -1,8 +1,8 @@
-mod app;
 mod debugger;
 mod emulator;
 mod handlers;
 mod keys;
+mod runner;
 mod ui;
 
 use std::panic;

@@ -1,10 +1,10 @@
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::{Event, KeyboardEvent};
 
-use crate::{app, emulator};
+use crate::{emulator, runner};
 
 pub fn set_handlers() {
-    let document = app::document();
+    let document = runner::document();
     const KEYS: [&str; 16] = [
         "KeyX", "Digit1", "Digit2", "Digit3", "KeyQ", "KeyW", "KeyE", "KeyA", "KeyS", "KeyD",
         "KeyZ", "KeyC", "Digit4", "KeyR", "KeyF", "KeyV",

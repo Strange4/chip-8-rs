@@ -7,6 +7,5 @@
 
 ## TODO
 
-- Add button to load rom
-- play and pause tick
-- adjust speed
+- adjust tick speed
+- store and load breakpoints in local storage (associate them with a rom name)

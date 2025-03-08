@@ -37,39 +37,39 @@ impl Runner {
     pub fn start_loop() -> Box<dyn FnOnce()> {
         let function = Rc::new(RefCell::new(None));
         let starter = function.clone();
-        let mut app = Runner::new();
+        let mut runner = Runner::new();
 
         *starter.borrow_mut() = Some(Closure::new(move || {
             let mut emulator = get_program().lock().unwrap();
-            let time_since_last_update = app.last_update.elapsed();
+            let time_since_last_update = runner.last_update.elapsed();
             let how_many_updates =
-                (time_since_last_update.as_secs_f64() * app.updates_per_second).ceil() as usize;
+                (time_since_last_update.as_secs_f64() * runner.updates_per_second).ceil() as usize;
 
             // because we can't update that fast, we'll run the updates that should've
             // been done since the last time it was updates
             for _ in 0..how_many_updates {
-                app.tick_number += 1;
+                runner.tick_number += 1;
                 emulator.tick();
             }
 
-            if how_many_updates != 0 {
-                app.last_update = Instant::now();
-            }
-
-            if app.last_paint.elapsed() > MIN_REPAINT_TIME {
+            if runner.last_paint.elapsed() > MIN_REPAINT_TIME {
                 emulator.timer_tick();
-                Runner::render(&emulator, &app.context);
-                app.last_paint = Instant::now();
+
+                Runner::render(&emulator, &runner.context);
+                runner.last_paint = Instant::now();
             }
 
-            if app.last_info.elapsed() > Duration::from_secs(1) {
+            if runner.last_info.elapsed() > Duration::from_secs(1) {
                 info!(
                     "Update number: {}, time passed: {:?}",
-                    app.tick_number, app.last_info
+                    runner.tick_number, runner.last_info
                 );
-                app.last_info = Instant::now();
+                runner.last_info = Instant::now();
             }
 
+            if how_many_updates != 0 {
+                runner.last_update = Instant::now();
+            }
             // loop and reloop
             set_timeout(function.borrow().as_ref().unwrap());
         }));

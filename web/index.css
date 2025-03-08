@@ -172,19 +172,22 @@ body {
 }
 
 canvas {
-    width: 100%;
+    --border-size: 1px;
+    --margin-size: 1rem;
+    border: 1px solid var(--bg4);
+    width: calc(100% - calc(var(--margin-size) * 2) - calc(var(--border-size) * 2));
     image-rendering: pixelated;
     aspect-ratio: 2;
-    margin: 0;
+    margin: var(--margin-size);
     padding: 0;
 }
 
 button {
-    min-width: 130px;
-    height: 40px;
+    min-width: 8rem;
+    height: 2.5rem;
     color: var(--fg);
     padding: 5px 10px;
-    font-weight: bold;
+    margin-bottom: 0.5rem;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
@@ -218,23 +221,30 @@ button:after {
     transition: 0.4s;
 }
 
+.checked {
+    color: var(--bg_h);
+    font-weight: bolder;
+    background-color: var(--green);
+    accent-color: var(--yellow);
+}
+
 #display {
     width: 100%;
 }
 
 #debugger {
     margin: 1rem;
-    /* overflow: scroll; */
-    min-width: fit-content;
-    /* display: flex; */
-    /* flex-direction: row; */
+    min-width: 28rem;
 }
 
 #debugger div {
-    /* max-height: 50vh; */
     display: inline-block;
     overflow: scroll;
     min-width: fit-content;
+}
+
+.off {
+    display: none;
 }
 
 #controls {
@@ -330,22 +340,4 @@ table tbody .breakpoint {
 
 table tbody .current-instruction {
     background-color: rgba(163, 229, 255, 0.2);
-}
-
-.checkbox {
-    min-width: 130px;
-    height: 30px;
-    color: var(--fg);
-    padding: 5px 10px;
-    transition: all 0.3s ease;
-    display: inline-block;
-    line-height: 30px;
-    border-radius: 5px;
-    border: none;
-    background-color: var(--bg1);
-    accent-color: var(--yellow);
-}
-
-.off {
-    display: none;
 }
