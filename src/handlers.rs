@@ -1,8 +1,9 @@
-use log::info;
+use log::{info, warn};
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
 use web_sys::{
-    js_sys::Uint8Array, Document, Event, HtmlButtonElement, HtmlDivElement, HtmlInputElement,
-    HtmlTableRowElement,
+    js_sys::{Promise, Uint8Array},
+    Document, Event, HtmlButtonElement, HtmlDivElement, HtmlInputElement, HtmlSelectElement,
+    HtmlTableRowElement, Request, RequestInit, Response,
 };
 
 use crate::{
@@ -24,6 +25,7 @@ pub fn set_handlers() {
     debugger_on_handler(document);
     toggle_breakpoint_handler(document);
     set_clock_speed_handler(document);
+    select_rom_handler(document);
 }
 
 fn start_button_handler(document: &Document) {
@@ -51,17 +53,22 @@ fn load_rom_handler(document: &Document) {
             let file = files.item(0).unwrap();
             info!("Loading rom: {}", file.name());
 
-            let closure = Closure::new(|js_value: JsValue| {
-                let u8_vec = Uint8Array::new(&js_value).to_vec();
-                let mut program = emulator::get_program().lock().unwrap();
-                program.load_rom(&u8_vec);
-                render_emulator(&program, &get_canvas_context());
-                info!("Loaded rom!");
-            });
+            let closure = load_rom_from_array_promise();
             let _ = file.array_buffer().then(&closure);
             closure.forget();
         }
     });
+}
+
+fn load_rom_from_array_promise() -> Closure<dyn FnMut(JsValue)> {
+    Closure::new(|js_value: JsValue| {
+        let u8_vec = Uint8Array::new(&js_value).to_vec();
+        let mut program = emulator::get_program().lock().unwrap();
+        program.load_rom(&u8_vec);
+        render_emulator(&program, &get_canvas_context());
+        info!("Loaded rom!");
+        Runner::start_loop()();
+    })
 }
 
 fn step_button_handler(document: &Document) {
@@ -172,11 +179,52 @@ fn set_clock_speed_handler(document: &Document) {
             *UPDATES_PER_SECOND.lock().unwrap() = value;
             display.set_value_as_number(value);
         } else {
-            info!("Too big of a number");
+            warn!("Too big of a number");
         }
     };
     add_event_listener(&slider, "input", update_func);
     add_event_listener(&number_input, "change", update_func);
+}
+
+fn select_rom_handler(document: &Document) {
+    let selector: HtmlSelectElement = get_element(document, "#rom-selector");
+    add_event_listener(&selector, "change", |event| {
+        stop_runner();
+        let selector = event
+            .current_target()
+            .unwrap()
+            .dyn_into::<HtmlSelectElement>()
+            .unwrap();
+        let rom_path = selector.value();
+        selector.blur().unwrap();
+        let closure = Closure::new(|value: JsValue| {
+            let response: Response = value
+                .dyn_into()
+                .expect("did not get a response object from fetching the rom");
+            let closure = load_rom_from_array_promise();
+            let _ = response
+                .array_buffer()
+                .expect("Could not turn rom into an array buffer")
+                .then(&closure);
+            closure.forget();
+        });
+
+        let _ = fetch_rom(&rom_path).then(&closure);
+        closure.forget();
+    });
+}
+
+fn fetch_rom(path: &str) -> Promise {
+    info!("Fetching rom: {path}");
+    let options = RequestInit::new();
+    options.set_method("GET");
+    let request = Request::new_with_str_and_init(&format!("/roms/{path}"), &options)
+        .expect("Could not create request to fetch rom");
+    request
+        .headers()
+        .set("Accept", "application/octet-stream")
+        .expect("Could not set header for rom request");
+    window().fetch_with_request(&request)
 }
 
 pub fn add_event_listener(target: &web_sys::EventTarget, event_name: &str, func: fn(e: Event)) {
@@ -185,4 +233,10 @@ pub fn add_event_listener(target: &web_sys::EventTarget, event_name: &str, func:
         .add_event_listener_with_event_listener(event_name, closure.as_ref().unchecked_ref())
         .expect("Could not add event listener");
     closure.forget();
+}
+
+pub fn trigger_select_splash_screen() {
+    let event = Event::new("change").unwrap();
+    let selector: HtmlSelectElement = get_element(&document(), "#rom-selector");
+    selector.dispatch_event(&event).unwrap();
 }

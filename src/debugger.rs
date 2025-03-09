@@ -26,7 +26,6 @@ pub fn render_debugger(program: &Program) {
 }
 
 fn render_registers(registers: &[u8], table: &HtmlTableElement) {
-    // let table: HtmlTableElement = create_element("table");
     let tbody = table
         .query_selector("tbody")
         .expect("bad query for tbody")
@@ -37,7 +36,7 @@ fn render_registers(registers: &[u8], table: &HtmlTableElement) {
         let old_node = tbody
             .child_nodes()
             .item((i * 2 + 1) as u32)
-            .unwrap_or_else(|| panic!("Couldn't get register memory row {i}"))
+            .expect("Couldn't get register memory row {i}")
             .child_nodes()
             .item(3)
             .expect("Couldn't get old register memory");
@@ -134,39 +133,39 @@ fn interpret_instruction(instruction: u16) -> String {
     match (first, second, third, fourth) {
         (0x0, 0x0, 0xE, 0x0) => "CLS".to_string().to_string(),
         (0x0, 0x0, 0xE, 0xE) => "RET".to_string().to_string(),
-        (0x0, _, _, _) => format!("SYS {nnn}").to_string(),
-        (0x1, _, _, _) => format!("JP {nnn}").to_string(),
-        (0x2, _, _, _) => format!("CALL {nnn}").to_string(),
-        (0x3, _, _, _) => format!("SE V[{second}], {kk}").to_string(),
-        (0x4, _, _, _) => format!("SNE V[{second}], {kk}").to_string(),
-        (0x5, _, _, 0x0) => format!("SE V[{second}], V[{third}]").to_string(),
-        (0x6, _, _, _) => format!("LD V[{second}], {kk}").to_string(),
-        (0x7, _, _, _) => format!("ADD V[{second}], {kk}").to_string(),
-        (0x8, _, _, 0x0) => format!("LD V[{second}], V[{third}]").to_string(),
-        (0x8, _, _, 0x1) => format!("OR V[{second}], V[{third}]").to_string(),
-        (0x8, _, _, 0x2) => format!("AND V[{second}], V[{third}]").to_string(),
-        (0x8, _, _, 0x3) => format!("XOR V[{second}], V[{third}]").to_string(),
-        (0x8, _, _, 0x4) => format!("ADD V[{second}], V[{third}]").to_string(),
-        (0x8, _, _, 0x5) => format!("SUB V[{second}], V[{third}]").to_string(),
-        (0x8, _, _, 0x6) => format!("SHR V[{second}]").to_string(),
-        (0x8, _, _, 0x7) => format!("SUBN V[{second}], V[{third}]").to_string(),
-        (0x8, _, _, 0xE) => format!("SHL V[{second}]").to_string(),
-        (0x9, _, _, 0x0) => format!("SNE V[{second}], V[{third}]").to_string(),
-        (0xA, _, _, _) => format!("LD I, {nnn}").to_string(),
-        (0xB, _, _, _) => format!("JP V0, {nnn}").to_string(),
-        (0xC, _, _, _) => format!("RND V[{second}], {kk}").to_string(),
-        (0xD, _, _, _) => format!("DRW V[{second}], V[{third}], {fourth}").to_string(),
-        (0xE, _, 0x9, 0xE) => format!("SKP V[{second}]").to_string(),
-        (0xE, _, 0xA, 0x1) => format!("SKNP V[{second}]").to_string(),
-        (0xF, _, 0x0, 0x7) => format!("LD V[{second}], DT").to_string(),
-        (0xF, _, 0x0, 0xA) => format!("LD V[{second}], K").to_string(),
-        (0xF, _, 0x1, 0x5) => format!("LD DT, V[{second}]").to_string(),
-        (0xF, _, 0x1, 0x8) => format!("LD ST, V[{second}]").to_string(),
-        (0xF, _, 0x1, 0xE) => format!("ADD I, V[{second}]").to_string(),
-        (0xF, _, 0x2, 0x9) => format!("LD F, V[{second}]").to_string(),
-        (0xF, _, 0x3, 0x3) => format!("LD B, V[{second}]").to_string(),
-        (0xF, _, 0x5, 0x5) => format!("LD [I], V[{second}]").to_string(),
-        (0xF, _, 0x6, 0x5) => format!("LD V[{second}], [I]").to_string(),
+        (0x0, _, _, _) => format!("SYS {nnn:x}").to_string(),
+        (0x1, _, _, _) => format!("JP {nnn:x}").to_string(),
+        (0x2, _, _, _) => format!("CALL {nnn:x}").to_string(),
+        (0x3, _, _, _) => format!("SE V[{second:x}], {kk:x}").to_string(),
+        (0x4, _, _, _) => format!("SNE V[{second:x}], {kk:x}").to_string(),
+        (0x5, _, _, 0x0) => format!("SE V[{second:x}], V[{third:x}]").to_string(),
+        (0x6, _, _, _) => format!("LD V[{second:x}], {kk:x}").to_string(),
+        (0x7, _, _, _) => format!("ADD V[{second:x}], {kk:x}").to_string(),
+        (0x8, _, _, 0x0) => format!("LD V[{second:x}], V[{third:x}]").to_string(),
+        (0x8, _, _, 0x1) => format!("OR V[{second:x}], V[{third:x}]").to_string(),
+        (0x8, _, _, 0x2) => format!("AND V[{second:x}], V[{third:x}]").to_string(),
+        (0x8, _, _, 0x3) => format!("XOR V[{second:x}], V[{third:x}]").to_string(),
+        (0x8, _, _, 0x4) => format!("ADD V[{second:x}], V[{third:x}]").to_string(),
+        (0x8, _, _, 0x5) => format!("SUB V[{second:x}], V[{third:x}]").to_string(),
+        (0x8, _, _, 0x6) => format!("SHR V[{second:x}]").to_string(),
+        (0x8, _, _, 0x7) => format!("SUBR V[{second:x}], V[{third:x}]").to_string(),
+        (0x8, _, _, 0xE) => format!("SHL V[{second:x}]").to_string(),
+        (0x9, _, _, 0x0) => format!("SNE V[{second:x}], V[{third:x}]").to_string(),
+        (0xA, _, _, _) => format!("LD I, {nnn:x}").to_string(),
+        (0xB, _, _, _) => format!("JP V0, {nnn:x}").to_string(),
+        (0xC, _, _, _) => format!("RND V[{second:x}], {kk:x}").to_string(),
+        (0xD, _, _, _) => format!("DRW V[{second:x}], V[{third:x}], {fourth}").to_string(),
+        (0xE, _, 0x9, 0xE) => format!("SKP V[{second:x}]").to_string(),
+        (0xE, _, 0xA, 0x1) => format!("SKNP V[{second:x}]").to_string(),
+        (0xF, _, 0x0, 0x7) => format!("LD V[{second:x}], DT").to_string(),
+        (0xF, _, 0x0, 0xA) => format!("LD V[{second:x}], K").to_string(),
+        (0xF, _, 0x1, 0x5) => format!("LD DT, V[{second:x}]").to_string(),
+        (0xF, _, 0x1, 0x8) => format!("LD ST, V[{second:x}]").to_string(),
+        (0xF, _, 0x1, 0xE) => format!("ADD I, V[{second:x}]").to_string(),
+        (0xF, _, 0x2, 0x9) => format!("LD F, V[{second:x}]").to_string(),
+        (0xF, _, 0x3, 0x3) => format!("LD B, V[{second:x}]").to_string(),
+        (0xF, _, 0x5, 0x5) => format!("LD [I], V[{second:x}]").to_string(),
+        (0xF, _, 0x6, 0x5) => format!("LD V[{second:x}], [I]").to_string(),
         _ => "".to_string(),
     }
 }

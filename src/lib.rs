@@ -14,6 +14,7 @@ pub fn start() {
     init_console();
     handlers::set_handlers();
     keys::set_handlers();
+    handlers::trigger_select_splash_screen();
 }
 
 fn init_console() {

@@ -1,5 +1,6 @@
 use std::sync::{Mutex, OnceLock};
 
+use log::error;
 use web_sys::js_sys::Math::random;
 
 use crate::ui;
@@ -44,8 +45,8 @@ impl Program {
             program_counter: Self::START_ADDRESS,
             index_register: 0,
             call_stack: Vec::new(),
-            delay_timer: 0xFF,
-            sound_timer: 0xFF,
+            delay_timer: 0,
+            sound_timer: 0,
             variable_regsiters: [0; 16],
             op_table: [NULL_OP; 0xF + 1],
             f_op_table: [NULL_OP; 0x65 + 1],
@@ -62,8 +63,8 @@ impl Program {
         self.program_counter = Self::START_ADDRESS;
         self.index_register = 0;
         self.call_stack.clear();
-        self.delay_timer = 0xFF;
-        self.sound_timer = 0xFF;
+        self.delay_timer = 0;
+        self.sound_timer = 0;
         self.variable_regsiters = [0; 16];
         self.pressed_keys = 0;
     }
@@ -224,7 +225,7 @@ impl Program {
                 let pointer = program.call_stack.pop().expect("returned from a function without a return address");
                 program.program_counter = pointer;
             },
-            _ => panic!("Encountered an execute machine language routine instruction. This isn't implemented")
+            _ => error!("Encountered an execute machine language routine instruction. This isn't implemented")
         }
     }
     fn op_1(program: &mut Program, instruction: u16) {
@@ -280,8 +281,8 @@ impl Program {
         let y_register = program.variable_regsiters[y_register_name];
 
         // this depends on the target platform: we default to 0 instead of VF
-        // since we choose to suport Chip 8 only, it defaults the flag to 0
-        let mut f_flag_value = 0;
+        // since we choose to suport Chip 8 only, it defaults the flag to 0.
+        // UPDATE: this doesn't work with the Octo compiler since it expects no reset of the flag
         let x_register = &mut program.variable_regsiters[x_register_name];
 
         let op_type = instruction & 0x000F;
@@ -302,32 +303,34 @@ impl Program {
                 let (new_value, overflow) = x_register.overflowing_add(y_register);
                 *x_register = new_value;
                 let overflow_value = if overflow { 1 } else { 0 };
-                f_flag_value = overflow_value;
+                program.variable_regsiters[0xF] = overflow_value;
             }
             0x5 => {
-                f_flag_value = if *x_register >= y_register { 1 } else { 0 };
+                let f_flag_value = if *x_register >= y_register { 1 } else { 0 };
                 *x_register = x_register.wrapping_sub(y_register);
+                program.variable_regsiters[0xF] = f_flag_value;
             }
             0x6 => {
                 let shifted_out = y_register & 0b1;
                 let new_value = y_register >> 1;
                 *x_register = new_value;
-                f_flag_value = shifted_out;
+                program.variable_regsiters[0xF] = shifted_out;
             }
             0x7 => {
-                f_flag_value = if y_register >= *x_register { 1 } else { 0 };
+                let f_flag_value = if y_register >= *x_register { 1 } else { 0 };
                 *x_register = y_register.wrapping_sub(*x_register);
+                program.variable_regsiters[0xF] = f_flag_value;
             }
             0xE => {
                 let shifted_out = (y_register & 0b10000000) >> 7;
                 let new_value = y_register << 1;
                 *x_register = new_value;
-                f_flag_value = shifted_out;
+                program.variable_regsiters[0xF] = shifted_out;
             }
-            _ => panic!("This arithmetic operation is not supported"),
+            _ => error!("This arithmetic operation is not supported"),
         }
 
-        program.variable_regsiters[0xF] = f_flag_value;
+        // program.variable_regsiters[0xF] = f_flag_value;
     }
     fn op_9(program: &mut Program, instruction: u16) {
         let x_register_name = ((instruction & 0x0F00) >> 8) as usize;
@@ -406,7 +409,7 @@ impl Program {
                 program.program_counter += 2;
             }
             (0xA1, true) => {}
-            _ => panic!("This isntruction type shouldn't exist"),
+            _ => error!("This isntruction type shouldn't exist"),
         }
     }
     #[allow(non_snake_case)]

@@ -12,18 +12,68 @@
 
 <body>
     <div id="display">
-        <audio id="beep" autoplay="true" loop="true" muted="true"
-            src="./assets/bleep-censorship-sound-wav-74691.mp3"></audio>
+        <audio id="beep" autoplay="true" loop="true" muted="true" src="./assets/beep.mp3"></audio>
         <canvas width="64" height="32"></canvas>
 
         <div id="controls">
             <button id="start-button">Start</button>
             <button id="stop-button">Stop</button>
-            <button id="step-button">Step</button>
 
             <!-- So we can have a nice button -->
-            <button onclick="document.querySelector('#load-rom').click()">Load Rom</button>
+            <button onclick="document.querySelector('#load-rom').click()">Upload Rom</button>
             <input style="display: none;" id="load-rom" name="load-rom" type="file" accept=".ch8">
+
+            <select name="rom-selector" id="rom-selector">
+                <option value="splash-screen.ch8">splash-screen.ch8</option>
+                <option value="1dcell.ch8">1dcell.ch8</option>
+                <option value="8ceattourny_d1.ch8">8ceattourny_d1.ch8</option>
+                <option value="8ceattourny_d2.ch8">8ceattourny_d2.ch8</option>
+                <option value="8ceattourny_d3.ch8">8ceattourny_d3.ch8</option>
+                <option value="BadKaiJuJu.ch8">BadKaiJuJu.ch8</option>
+                <option value="br8kout.ch8">br8kout.ch8</option>
+                <option value="carbon8.ch8">carbon8.ch8</option>
+                <option value="caveexplorer.ch8">caveexplorer.ch8</option>
+                <option value="chipquarium.ch8">chipquarium.ch8</option>
+                <option value="chipwar.ch8">chipwar.ch8</option>
+                <option value="danm8ku.ch8">danm8ku.ch8</option>
+                <option value="down8.ch8">down8.ch8</option>
+                <option value="flightrunner.ch8">flightrunner.ch8</option>
+                <option value="fuse.ch8">fuse.ch8</option>
+                <option value="ghostEscape.ch8">ghostEscape.ch8</option>
+                <option value="glitchGhost.ch8">glitchGhost.ch8</option>
+                <option value="horseWorldOnline.ch8">horseWorldOnline.ch8</option>
+                <option value="knumberknower.ch8">knumberknower.ch8</option>
+                <option value="masquer8.ch8">masquer8.ch8</option>
+                <option value="mastermind.ch8">mastermind.ch8</option>
+                <option value="mini-lights-out.ch8">mini-lights-out.ch8</option>
+                <option value="octoachip8story.ch8">octoachip8story.ch8</option>
+                <option value="octojam1title.ch8">octojam1title.ch8</option>
+                <option value="octojam2title.ch8">octojam2title.ch8</option>
+                <option value="octojam3title.ch8">octojam3title.ch8</option>
+                <option value="octojam4title.ch8">octojam4title.ch8</option>
+                <option value="octojam5title.ch8">octojam5title.ch8</option>
+                <option value="octojam6title.ch8">octojam6title.ch8</option>
+                <option value="octojam7title.ch8">octojam7title.ch8</option>
+                <option value="octojam8title.ch8">octojam8title.ch8</option>
+                <option value="octojam9title.ch8">octojam9title.ch8</option>
+                <option value="octojam10title.ch8">octojam10title.ch8</option>
+                <option value="octorancher.ch8">octorancher.ch8</option>
+                <option value="outlaw.ch8">outlaw.ch8</option>
+                <option value="petdog.ch8">petdog.ch8</option>
+                <option value="piper.ch8">piper.ch8</option>
+                <option value="pumpkindressup.ch8">pumpkindressup.ch8</option>
+                <option value="RPS.ch8">RPS.ch8</option>
+                <option value="slipperyslope.ch8">slipperyslope.ch8</option>
+                <option value="snek.ch8">snek.ch8</option>
+                <option value="spacejam.ch8">spacejam.ch8</option>
+                <option value="spaceracer.ch8">spaceracer.ch8</option>
+                <option value="spockpaperscissors.ch8">spockpaperscissors.ch8</option>
+                <option value="superpong.ch8">superpong.ch8</option>
+                <option value="tank.ch8">tank.ch8</option>
+                <option value="tombstontipp.ch8">tombstontipp.ch8</option>
+                <option value="wdl.ch8">wdl.ch8</option>
+            </select>
+            <button id="step-button">Step</button>
             <button id="show-debugger">Show Debugger</button>
             <div id="speed-control">
                 <input type="range" name="speed-knob" id="speed-knob" class="range" min="1" value="1000" max="2000">
@@ -38,67 +88,67 @@
             <table id="registers-table">
                 <tbody>
                     <tr>
-                        <td>V[0] =</td>
+                        <td>V[0]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[1] =</td>
+                        <td>V[1]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[2] =</td>
+                        <td>V[2]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[3] =</td>
+                        <td>V[3]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[4] =</td>
+                        <td>V[4]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[5] =</td>
+                        <td>V[5]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[6] =</td>
+                        <td>V[6]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[7] =</td>
+                        <td>V[7]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[8] =</td>
+                        <td>V[8]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[9] =</td>
+                        <td>V[9]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[10]=</td>
+                        <td>V[A]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[11]=</td>
+                        <td>V[B]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[12]=</td>
+                        <td>V[C]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[13]=</td>
+                        <td>V[D]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[14]=</td>
+                        <td>V[E]=</td>
                         <td>0</td>
                     </tr>
                     <tr>
-                        <td>V[15]=</td>
+                        <td>V[F]=</td>
                         <td>0</td>
                     </tr>
                 </tbody>

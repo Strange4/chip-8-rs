@@ -18,11 +18,9 @@ pub fn render_emulator(program: &Program, ctx: &CanvasRenderingContext2d) {
 
     ctx.put_image_data(&data, 0.0, 0.0)
         .expect("Could not put image data");
-    // let start = Instant::now();
     if *RENDER_DEBUGGER.lock().unwrap() {
         render_debugger(program);
     }
-    // info!("Rendering debugger took {:?}", start.elapsed());
 }
 
 pub fn get_element<T: JsCast>(document: &Document, id: &str) -> T {
@@ -30,9 +28,9 @@ pub fn get_element<T: JsCast>(document: &Document, id: &str) -> T {
     document
         .query_selector(id)
         .expect("The query was wrong")
-        .expect(&format!("The element {type_name} could not be found"))
+        .unwrap_or_else(|| panic!("The element {type_name} could not be found"))
         .dyn_into()
-        .expect(&format!("Could not dyn into the element {type_name}"))
+        .unwrap_or_else(|_| panic!("Could not dyn into the element {type_name}"))
 }
 
 pub fn to_number<T>(node: &Node) -> T

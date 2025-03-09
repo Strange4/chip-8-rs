@@ -35,6 +35,12 @@ web-sys = { version = "0.3.76", features = [
     "HtmlDivElement",
     "NodeList",
     "HtmlAudioElement",
+    "Headers",
+    "Request",
+    "RequestInit",
+    "RequestMode",
+    "Response",
+    "HtmlSelectElement",
 ] }
 log = "0.4"
 console_log = "0.2"

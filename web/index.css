@@ -78,7 +78,6 @@ button {
     min-width: 8rem;
     height: 2.5rem;
     color: var(--fg);
-    padding: 5px 10px;
     margin-bottom: 0.5rem;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -268,4 +267,16 @@ table tbody .current-instruction {
     cursor: pointer;
     border: 4px solid #333;
     box-shadow: -407px 0 0 400px var(--yellow);
+}
+
+/* Rom Selector */
+#rom-selector {
+    background-color: var(--bg1);
+    color: var(--fg);
+    outline: none;
+    height: 2.5rem;
+    margin-bottom: 0.5rem;
+    border: none;
+    border-radius: 5px;
+    text-align: center;
 }
