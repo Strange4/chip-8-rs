@@ -1,24 +1,24 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, sync::Mutex};
 
 use log::info;
 use wasm_bindgen::{prelude::Closure, JsCast};
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use web_sys::CanvasRenderingContext2d;
 use web_time::{Duration, Instant};
 
 use crate::{
     debugger::INTERVAL_HANDLE,
     emulator::{get_program, Program},
-    ui::render_emulator,
+    ui::{get_canvas_context, render_emulator, window},
 };
 
 const MIN_REPAINT_TIME: Duration = Duration::from_millis(16);
+pub static UPDATES_PER_SECOND: Mutex<f64> = Mutex::new(1_000.0);
 
 pub struct Runner {
     last_update: Instant,
     last_paint: Instant,
     last_info: Instant,
     tick_number: i32,
-    updates_per_second: f64,
     context: CanvasRenderingContext2d,
 }
 
@@ -29,7 +29,6 @@ impl Runner {
             last_paint: Instant::now(),
             last_info: Instant::now(),
             tick_number: 0,
-            updates_per_second: 1_000_000.0,
             context: get_canvas_context(),
         }
     }
@@ -42,8 +41,9 @@ impl Runner {
         *starter.borrow_mut() = Some(Closure::new(move || {
             let mut emulator = get_program().lock().unwrap();
             let time_since_last_update = runner.last_update.elapsed();
-            let how_many_updates =
-                (time_since_last_update.as_secs_f64() * runner.updates_per_second).ceil() as usize;
+            let how_many_updates = (time_since_last_update.as_secs_f64()
+                * *UPDATES_PER_SECOND.lock().unwrap())
+            .floor() as usize;
 
             // because we can't update that fast, we'll run the updates that should've
             // been done since the last time it was updates
@@ -86,24 +86,6 @@ impl Runner {
     }
 }
 
-pub fn canvas() -> HtmlCanvasElement {
-    document()
-        .query_selector("canvas")
-        .expect("the selector is not valid")
-        .expect("There was no canvas in the html document")
-        .dyn_into()
-        .expect("Could not dyn into canvas")
-}
-
-pub fn get_canvas_context() -> CanvasRenderingContext2d {
-    canvas()
-        .get_context("2d")
-        .expect("Could not get the canvas context")
-        .expect("There was no context")
-        .dyn_into::<web_sys::CanvasRenderingContext2d>()
-        .expect("Couldn't transform the js object into canvas context")
-}
-
 fn set_timeout(f: &Closure<dyn FnMut()>) {
     let window = window();
     let mut old_handle = INTERVAL_HANDLE.lock().unwrap();
@@ -116,14 +98,4 @@ fn set_timeout(f: &Closure<dyn FnMut()>) {
         .set_timeout_with_callback(f.as_ref().unchecked_ref())
         .expect("Couldn't register 'request_animation_frame'");
     old_handle.replace(new_handle);
-}
-
-pub fn window() -> web_sys::Window {
-    web_sys::window().expect("no global 'window' found")
-}
-
-pub fn document() -> web_sys::Document {
-    window()
-        .document()
-        .expect("there was no document for this window")
 }

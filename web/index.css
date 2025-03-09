@@ -34,125 +34,26 @@
     --scrollbar-size: 15px;
 }
 
-/* Normal Colors */
-
-.red {
-    color: var(--red);
+/* Make the scrollbarrs look nice */
+::-webkit-scrollbar {
+    height: var(--scrollbar-size);
+    width: var(--scrollbar-size);
+    background-color: var(--bg);
 }
 
-.green {
-    color: var(--green);
+::-webkit-scrollbar-track {
+    border: 0;
 }
 
-.yellow {
-    color: var(--yellow);
+::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
-.blue {
-    color: var(--blue);
+::-webkit-scrollbar-corner {
+    background: rgba(0, 0, 0, 0);
 }
 
-.purple {
-    color: var(--purple);
-}
-
-.aqua {
-    color: var(--aqua);
-}
-
-.gray {
-    color: var(--gray);
-}
-
-.orange {
-    color: var(--orange);
-}
-
-/* Dim Colors */
-
-.red-dim {
-    color: var(--red-dim);
-}
-
-.green-dim {
-    color: var(--green-dim);
-}
-
-.yellow-dim {
-    color: var(--yellow-dim);
-}
-
-.blue-dim {
-    color: var(--blue-dim);
-}
-
-.purple-dim {
-    color: var(--purple-dim);
-}
-
-.aqua-dim {
-    color: var(--aqua-dim);
-}
-
-.gray-dim {
-    color: var(--gray-dim);
-}
-
-.orange-dim {
-    color: var(--orange-dim);
-}
-
-/* Foreground Colors */
-
-.fg {
-    color: var(--fg);
-}
-
-.fg1 {
-    color: var(--fg1);
-}
-
-.fg2 {
-    color: var(--fg2);
-}
-
-.fg3 {
-    color: var(--fg3);
-}
-
-.fg4 {
-    color: var(--fg4);
-}
-
-/* Background Colors */
-
-.bg-hard {
-    color: var(--bg_h);
-}
-
-.bg {
-    color: var(--bg);
-}
-
-.bg-soft {
-    color: var(--bg_s);
-}
-
-.bg1 {
-    color: var(--bg1);
-}
-
-.bg2 {
-    color: var(--bg2);
-}
-
-.bg3 {
-    color: var(--bg3);
-}
-
-.bg4 {
-    color: var(--bg4);
-}
+/* Basic background */
 
 html {
     background-color: var(--bg);
@@ -171,16 +72,7 @@ body {
     flex-direction: row;
 }
 
-canvas {
-    --border-size: 1px;
-    --margin-size: 1rem;
-    border: 1px solid var(--bg4);
-    width: calc(100% - calc(var(--margin-size) * 2) - calc(var(--border-size) * 2));
-    image-rendering: pixelated;
-    aspect-ratio: 2;
-    margin: var(--margin-size);
-    padding: 0;
-}
+/* Make the buttons look the same */
 
 button {
     min-width: 8rem;
@@ -228,6 +120,20 @@ button:after {
     accent-color: var(--yellow);
 }
 
+/* the display and stuff */
+
+canvas {
+    --border-size: 1px;
+    --margin-size: 1rem;
+    border: 1px solid var(--bg4);
+    /* Making the width just the right size so it doesn't overflwo */
+    width: calc(100% - calc(var(--margin-size) * 2) - calc(var(--border-size) * 2));
+    image-rendering: pixelated;
+    aspect-ratio: 2;
+    margin: var(--margin-size);
+    padding: 0;
+}
+
 #display {
     width: 100%;
 }
@@ -253,25 +159,6 @@ button:after {
 
 #load_rom {
     opacity: 0;
-}
-
-::-webkit-scrollbar {
-    height: var(--scrollbar-size);
-    width: var(--scrollbar-size);
-    background-color: var(--bg);
-}
-
-::-webkit-scrollbar-track {
-    border: 0;
-}
-
-::-webkit-scrollbar-thumb {
-    /* border-radius: 8px; */
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-::-webkit-scrollbar-corner {
-    background: rgba(0, 0, 0, 0);
 }
 
 
@@ -340,4 +227,45 @@ table tbody .breakpoint {
 
 table tbody .current-instruction {
     background-color: rgba(163, 229, 255, 0.2);
+}
+
+/* Range slider */
+#speed-display {
+    outline: none;
+    border: none;
+    background: none;
+    width: 10rem;
+}
+
+.speed-display {
+    font-size: 2rem;
+    color: var(--fg);
+}
+
+#speed-control {
+    display: inline-block;
+}
+
+.range {
+    width: 15rem;
+    height: 15px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--bg_h);
+    outline: none;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--yellow);
+    cursor: pointer;
+    border: 4px solid #333;
+    box-shadow: -407px 0 0 400px var(--yellow);
 }

@@ -8,22 +8,26 @@ use web_sys::{
 use crate::{
     debugger::{render_debugger, BREAKPOINTS, INTERVAL_HANDLE, RENDER_DEBUGGER},
     emulator::{self, get_program},
-    runner::{self, get_canvas_context, window, Runner},
-    ui::{add_class_name, get_element, remove_class_name, render_emulator, to_number},
+    runner::{Runner, UPDATES_PER_SECOND},
+    ui::{
+        self, add_class_name, document, get_canvas_context, get_element, remove_class_name,
+        render_emulator, to_number, window,
+    },
 };
 
 pub fn set_handlers() {
-    let document = &runner::document();
+    let document = &document();
     start_button_handler(document);
     stop_button_handler(document);
     step_button_handler(document);
     load_rom_handler(document);
     debugger_on_handler(document);
     toggle_breakpoint_handler(document);
+    set_clock_speed_handler(document);
 }
 
 fn start_button_handler(document: &Document) {
-    let button: HtmlButtonElement = get_element(document, "#start_button");
+    let button: HtmlButtonElement = get_element(document, "#start-button");
     add_event_listener(&button, "click", |_| {
         let starter = Runner::start_loop();
         starter();
@@ -31,12 +35,12 @@ fn start_button_handler(document: &Document) {
 }
 
 fn stop_button_handler(document: &Document) {
-    let button: HtmlButtonElement = get_element(document, "#stop_button");
+    let button: HtmlButtonElement = get_element(document, "#stop-button");
     add_event_listener(&button, "click", |_| stop_runner());
 }
 
 fn load_rom_handler(document: &Document) {
-    let input_element: HtmlInputElement = get_element(document, "#load_rom");
+    let input_element: HtmlInputElement = get_element(document, "#load-rom");
     add_event_listener(&input_element, "change", |e| {
         let input = e
             .current_target()
@@ -61,7 +65,7 @@ fn load_rom_handler(document: &Document) {
 }
 
 fn step_button_handler(document: &Document) {
-    let button: HtmlButtonElement = get_element(document, "#step_button");
+    let button: HtmlButtonElement = get_element(document, "#step-button");
     add_event_listener(&button, "click", |_| {
         stop_runner();
         let mut emulator = emulator::get_program()
@@ -69,7 +73,7 @@ fn step_button_handler(document: &Document) {
             .expect("Could not lock the program");
         emulator.tick();
         emulator.timer_tick();
-        render_emulator(&emulator, &runner::get_canvas_context());
+        render_emulator(&emulator, &get_canvas_context());
         info!("stepped through {}", emulator.program_counter)
     });
 }
@@ -84,9 +88,9 @@ fn stop_runner() {
 }
 
 fn debugger_on_handler(document: &Document) {
-    let checkbox: HtmlButtonElement = get_element(document, "#show_debugger");
+    let checkbox: HtmlButtonElement = get_element(document, "#show-debugger");
     add_event_listener(&checkbox, "click", |e| {
-        let document = &crate::runner::document();
+        let document = &crate::ui::document();
         let checkbox: HtmlButtonElement = e
             .current_target()
             .expect("Could not get target of event")
@@ -149,6 +153,30 @@ fn toggle_breakpoint_handler(document: &Document) {
             }
         });
     }
+}
+
+fn set_clock_speed_handler(document: &Document) {
+    let slider: HtmlInputElement = get_element(document, "#speed-knob");
+    let number_input: HtmlInputElement = get_element(document, "#speed-display");
+    let update_func = |event: Event| {
+        // having so many unwraps and dyn intos is the reason that I think running js like code from rust is bad
+        if let Ok(value) = event
+            .current_target()
+            .unwrap()
+            .dyn_into::<HtmlInputElement>()
+            .unwrap()
+            .value()
+            .parse::<f64>()
+        {
+            let display: HtmlInputElement = get_element(&ui::document(), "#speed-display");
+            *UPDATES_PER_SECOND.lock().unwrap() = value;
+            display.set_value_as_number(value);
+        } else {
+            info!("Too big of a number");
+        }
+    };
+    add_event_listener(&slider, "input", update_func);
+    add_event_listener(&number_input, "change", update_func);
 }
 
 pub fn add_event_listener(target: &web_sys::EventTarget, event_name: &str, func: fn(e: Event)) {

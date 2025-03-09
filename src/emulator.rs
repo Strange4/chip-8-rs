@@ -1,8 +1,6 @@
 use std::sync::{Mutex, OnceLock};
 
-use log::info;
 use web_sys::js_sys::Math::random;
-use web_time::Instant;
 
 use crate::ui;
 

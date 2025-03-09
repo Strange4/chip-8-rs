@@ -5,8 +5,7 @@ use web_sys::{HtmlTableElement, HtmlTableRowElement, Node};
 
 use crate::{
     emulator::Program,
-    runner::document,
-    ui::{add_class_name, get_element, remove_class_name, to_number},
+    ui::{add_class_name, document, get_element, remove_class_name, to_number},
 };
 
 pub static INTERVAL_HANDLE: Mutex<Option<i32>> = Mutex::new(None);
@@ -55,13 +54,14 @@ fn render_memory(memory: &[u8], program_counter: usize, table: &HtmlTableElement
         .expect("bad query for tbody")
         .expect("There was no tbody");
 
-    // I paginated this wrong because the pc increments by 2 but it looks better
+    const INSTRUCTION_SIZE: usize = 2;
     const PAGE_SIZE: usize = 16;
-    let row_number = program_counter % PAGE_SIZE;
-    let page_start = program_counter - row_number;
+    let row_number = program_counter % (PAGE_SIZE * INSTRUCTION_SIZE);
+    let alignment = program_counter % INSTRUCTION_SIZE;
+    let page_start = program_counter - row_number + alignment;
 
     for i in 0..PAGE_SIZE {
-        let address = page_start + i * 2;
+        let address = page_start + i * INSTRUCTION_SIZE;
         let value = ((memory[address] as u16) << 8) | memory[address + 1] as u16;
         let row: HtmlTableRowElement = tbody
             .child_nodes()

@@ -1,15 +1,14 @@
-use std::{
-    str::FromStr,
-    sync::{Mutex, OnceLock},
-};
+use std::str::FromStr;
 
 use crate::{
     debugger::{render_debugger, RENDER_DEBUGGER},
     emulator::Program,
-    runner::document,
 };
 use wasm_bindgen::{Clamped, JsCast};
-use web_sys::{CanvasRenderingContext2d, Document, Element, HtmlAudioElement, ImageData, Node};
+use web_sys::{
+    CanvasRenderingContext2d, Document, Element, HtmlAudioElement, HtmlCanvasElement, ImageData,
+    Node,
+};
 
 pub fn render_emulator(program: &Program, ctx: &CanvasRenderingContext2d) {
     let width = Program::width() as u32;
@@ -24,14 +23,6 @@ pub fn render_emulator(program: &Program, ctx: &CanvasRenderingContext2d) {
         render_debugger(program);
     }
     // info!("Rendering debugger took {:?}", start.elapsed());
-}
-
-pub fn create_element<T: JsCast>(name: &str) -> T {
-    document()
-        .create_element(name)
-        .unwrap_or_else(|_| panic!("Could not create element {}", name))
-        .dyn_into()
-        .unwrap_or_else(|_| panic!("Could not dyn into element {}", std::any::type_name::<T>()))
 }
 
 pub fn get_element<T: JsCast>(document: &Document, id: &str) -> T {
@@ -83,4 +74,32 @@ pub fn beep() {
 
 pub fn stop_beep() {
     audio().set_muted(true);
+}
+
+pub fn canvas() -> HtmlCanvasElement {
+    document()
+        .query_selector("canvas")
+        .expect("the selector is not valid")
+        .expect("There was no canvas in the html document")
+        .dyn_into()
+        .expect("Could not dyn into canvas")
+}
+
+pub fn get_canvas_context() -> CanvasRenderingContext2d {
+    canvas()
+        .get_context("2d")
+        .expect("Could not get the canvas context")
+        .expect("There was no context")
+        .dyn_into::<web_sys::CanvasRenderingContext2d>()
+        .expect("Couldn't transform the js object into canvas context")
+}
+
+pub fn window() -> web_sys::Window {
+    web_sys::window().expect("no global 'window' found")
+}
+
+pub fn document() -> web_sys::Document {
+    window()
+        .document()
+        .expect("there was no document for this window")
 }
