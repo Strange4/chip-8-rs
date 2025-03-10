@@ -22,6 +22,11 @@ All graciously taken from the [Chip 8 Archive](https://johnearnest.github.io/chi
 2. Run `./build.sh`
 3. Serve the `web/index.html` from a web server and enjoy!
 
+## WHY?
+
+This shows what is possible with just Rust (+ amazing glue tooling) and a few dependencies.
+The javascript included in this project starts the WASM and lets it run!
+
 ## Thanks
 
 This couldn't have been possible without these amazing websites.

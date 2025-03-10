@@ -26,6 +26,7 @@ pub fn set_handlers() {
     toggle_breakpoint_handler(document);
     set_clock_speed_handler(document);
     select_rom_handler(document);
+    reset_emulator_handler(document);
 }
 
 fn start_button_handler(document: &Document) {
@@ -225,6 +226,13 @@ fn fetch_rom(path: &str) -> Promise {
         .set("Accept", "application/octet-stream")
         .expect("Could not set header for rom request");
     window().fetch_with_request(&request)
+}
+
+fn reset_emulator_handler(document: &Document) {
+    let reset_button: HtmlButtonElement = get_element(document, "#reset");
+    add_event_listener(&reset_button, "click", |_| {
+        get_program().lock().unwrap().reset();
+    });
 }
 
 pub fn add_event_listener(target: &web_sys::EventTarget, event_name: &str, func: fn(e: Event)) {
