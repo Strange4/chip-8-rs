@@ -219,7 +219,11 @@ fn fetch_rom(path: &str) -> Promise {
     info!("Fetching rom: {path}");
     let options = RequestInit::new();
     options.set_method("GET");
-    let request = Request::new_with_str_and_init(&format!("/roms/{path}"), &options)
+    let current_path = window().location().href().unwrap();
+    let url = current_path
+        .trim_end_matches("index.html")
+        .trim_end_matches("/");
+    let request = Request::new_with_str_and_init(&format!("{url}/roms/{path}"), &options)
         .expect("Could not create request to fetch rom");
     request
         .headers()

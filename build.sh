@@ -12,3 +12,6 @@ elif [ $1 == "--release" ]; then
 elif [ $1 == "--profiling" ]; then
     wasm-pack build --target web --profiling --out-dir web/wasm
 fi
+
+echo "Copying the roms..."
+cp -r roms web
