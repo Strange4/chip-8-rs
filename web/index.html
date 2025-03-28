@@ -7,7 +7,10 @@
     <title>Chip8-RS</title>
     <link rel="stylesheet" href="./index.css">
     <link rel="icon" type="image/ico" href="./assets/favicon.ico">
-    <script defer type="module" src="index.js"></script>
+    <script defer type="module">
+        import init from './wasm/chip_8.js'
+        init();
+    </script>
 </head>
 
 <body>
@@ -25,54 +28,61 @@
             <input style="display: none;" id="load-rom" name="load-rom" type="file" accept=".ch8">
 
             <select name="rom-selector" id="rom-selector">
-                <option value="splash-screen.ch8">splash-screen.ch8</option>
-                <option value="1dcell.ch8">1dcell.ch8</option>
-                <option value="8ceattourny_d1.ch8">8ceattourny_d1.ch8</option>
-                <option value="8ceattourny_d2.ch8">8ceattourny_d2.ch8</option>
-                <option value="8ceattourny_d3.ch8">8ceattourny_d3.ch8</option>
-                <option value="BadKaiJuJu.ch8">BadKaiJuJu.ch8</option>
-                <option value="br8kout.ch8">br8kout.ch8</option>
-                <option value="carbon8.ch8">carbon8.ch8</option>
-                <option value="caveexplorer.ch8">caveexplorer.ch8</option>
-                <option value="chipquarium.ch8">chipquarium.ch8</option>
-                <option value="chipwar.ch8">chipwar.ch8</option>
-                <option value="danm8ku.ch8">danm8ku.ch8</option>
-                <option value="down8.ch8">down8.ch8</option>
-                <option value="flightrunner.ch8">flightrunner.ch8</option>
-                <option value="fuse.ch8">fuse.ch8</option>
-                <option value="ghostEscape.ch8">ghostEscape.ch8</option>
-                <option value="glitchGhost.ch8">glitchGhost.ch8</option>
-                <option value="horseWorldOnline.ch8">horseWorldOnline.ch8</option>
-                <option value="knumberknower.ch8">knumberknower.ch8</option>
-                <option value="masquer8.ch8">masquer8.ch8</option>
-                <option value="mastermind.ch8">mastermind.ch8</option>
-                <option value="mini-lights-out.ch8">mini-lights-out.ch8</option>
-                <option value="octoachip8story.ch8">octoachip8story.ch8</option>
-                <option value="octojam1title.ch8">octojam1title.ch8</option>
-                <option value="octojam2title.ch8">octojam2title.ch8</option>
-                <option value="octojam3title.ch8">octojam3title.ch8</option>
-                <option value="octojam4title.ch8">octojam4title.ch8</option>
-                <option value="octojam5title.ch8">octojam5title.ch8</option>
-                <option value="octojam6title.ch8">octojam6title.ch8</option>
-                <option value="octojam7title.ch8">octojam7title.ch8</option>
-                <option value="octojam8title.ch8">octojam8title.ch8</option>
-                <option value="octojam9title.ch8">octojam9title.ch8</option>
-                <option value="octojam10title.ch8">octojam10title.ch8</option>
-                <option value="octorancher.ch8">octorancher.ch8</option>
-                <option value="outlaw.ch8">outlaw.ch8</option>
-                <option value="petdog.ch8">petdog.ch8</option>
-                <option value="piper.ch8">piper.ch8</option>
-                <option value="pumpkindressup.ch8">pumpkindressup.ch8</option>
-                <option value="RPS.ch8">RPS.ch8</option>
-                <option value="slipperyslope.ch8">slipperyslope.ch8</option>
-                <option value="snek.ch8">snek.ch8</option>
-                <option value="spacejam.ch8">spacejam.ch8</option>
-                <option value="spaceracer.ch8">spaceracer.ch8</option>
-                <option value="spockpaperscissors.ch8">spockpaperscissors.ch8</option>
-                <option value="superpong.ch8">superpong.ch8</option>
-                <option value="tank.ch8">tank.ch8</option>
-                <option value="tombstontipp.ch8">tombstontipp.ch8</option>
-                <option value="wdl.ch8">wdl.ch8</option>
+                <option value="splash-screen.ch8">splash-screen</option>
+                <option value="1dcell.ch8">1dcell</option>
+                <option value="8ceattourny_d1.ch8">8ceattourny_d1</option>
+                <option value="8ceattourny_d2.ch8">8ceattourny_d2</option>
+                <option value="8ceattourny_d3.ch8">8ceattourny_d3</option>
+                <option value="BadKaiJuJu.ch8">BadKaiJuJu</option>
+                <option value="br8kout.ch8">br8kout</option>
+                <option value="carbon8.ch8">carbon8</option>
+                <option value="caveexplorer.ch8">caveexplorer</option>
+                <option value="chipquarium.ch8">chipquarium</option>
+                <option value="chipwar.ch8">chipwar</option>
+                <option value="danm8ku.ch8">danm8ku</option>
+                <option value="down8.ch8">down8</option>
+                <option value="flightrunner.ch8">flightrunner</option>
+                <option value="fuse.ch8">fuse</option>
+                <option value="ghostEscape.ch8">ghostEscape</option>
+                <option value="glitchGhost.ch8">glitchGhost</option>
+                <option value="horseWorldOnline.ch8">horseWorldOnline</option>
+                <option value="knumberknower.ch8">knumberknower</option>
+                <option value="masquer8.ch8">masquer8</option>
+                <option value="mastermind.ch8">mastermind</option>
+                <option value="mini-lights-out.ch8">mini-lights-out</option>
+                <option value="octoachip8story.ch8">octoachip8story</option>
+                <option value="octojam1title.ch8">octojam1title</option>
+                <option value="octojam2title.ch8">octojam2title</option>
+                <option value="octojam3title.ch8">octojam3title</option>
+                <option value="octojam4title.ch8">octojam4title</option>
+                <option value="octojam5title.ch8">octojam5title</option>
+                <option value="octojam6title.ch8">octojam6title</option>
+                <option value="octojam7title.ch8">octojam7title</option>
+                <option value="octojam8title.ch8">octojam8title</option>
+                <option value="octojam9title.ch8">octojam9title</option>
+                <option value="octojam10title.ch8">octojam10title</option>
+                <option value="octorancher.ch8">octorancher</option>
+                <option value="outlaw.ch8">outlaw</option>
+                <option value="petdog.ch8">petdog</option>
+                <option value="piper.ch8">piper</option>
+                <option value="pumpkindressup.ch8">pumpkindressup</option>
+                <option value="RPS.ch8">RPS</option>
+                <option value="slipperyslope.ch8">slipperyslope</option>
+                <option value="snek.ch8">snek</option>
+                <option value="spacejam.ch8">spacejam</option>
+                <option value="spaceracer.ch8">spaceracer</option>
+                <option value="spockpaperscissors.ch8">spockpaperscissors</option>
+                <option value="superpong.ch8">superpong</option>
+                <option value="tank.ch8">tank</option>
+                <option value="tombstontipp.ch8">tombstontipp</option>
+                <option value="wdl.ch8">wdl</option>
+                <option value="tests/1-chip8-logo.ch8">1-chip8-logo</option>
+                <option value="tests/2-ibm-logo.ch8">2-ibm-logo</option>
+                <option value="tests/3-corax+.ch8">3-corax+</option>
+                <option value="tests/4-flags.ch8">4-flags</option>
+                <option value="tests/5-quirks.ch8">5-quirks</option>
+                <option value="tests/6-keypad.ch8">6-keypad</option>
+                <option value="tests/7-beep.ch8">7-beep</option>
             </select>
             <button id="step-button">Step</button>
             <button id="show-debugger">Show Debugger</button>
